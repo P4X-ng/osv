@@ -1192,7 +1192,7 @@ When encountering issues:
 **When Asking for Help:**
 1. Describe the problem clearly
 2. Include error messages
-3. Provide OSv version: `./scripts/build --version`
+3. Provide OSv version: Check `git describe --tags` or README.md
 4. Share build command
 5. Share run command
 6. Include relevant logs

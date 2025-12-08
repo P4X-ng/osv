@@ -178,19 +178,19 @@ This directory contains comprehensive documentation for the OSv unikernel projec
 
 | Use Case | Primary Doc | Supporting Docs |
 |----------|-------------|-----------------|
-| First-time user | Best Practices §1-2 | Quick Reference |
-| Application porting | Best Practices §2 | Quick Reference (language section) |
-| Performance tuning | Best Practices §3 | Customization §7 |
-| Size optimization | Customization §4 | Quick Reference (optimization) |
-| Boot time optimization | Best Practices §3.1 | Customization §7.5 |
-| Production deployment | Best Practices §7 | Quick Reference (cloud) |
-| Debugging issues | Best Practices §6 | Quick Reference (debugging) |
-| Security review | Code Review §8 | Best Practices §4 |
+| First-time user | Best Practices (Introduction & App Porting) | Quick Reference |
+| Application porting | Best Practices (App Porting) | Quick Reference (language section) |
+| Performance tuning | Best Practices (Performance) | Customization (Performance Tuning) |
+| Size optimization | Customization (Size Reduction) | Quick Reference (optimization) |
+| Boot time optimization | Best Practices (Boot Time) | Customization (Boot Optimization) |
+| Production deployment | Best Practices (Production) | Quick Reference (cloud) |
+| Debugging issues | Best Practices (Debugging) | Quick Reference (debugging) |
+| Security review | Code Review (Security) | Best Practices (Security) |
 | Architecture research | Code Review | Custom Integration |
-| Custom driver development | Custom Integration §5 | Code Review §6 |
-| Custom filesystem | Custom Integration §4 | Code Review §5 |
-| Custom networking | Custom Integration §2 | Code Review §4 |
-| Contributing to OSv | Code Review | Best Practices §1 |
+| Custom driver development | Custom Integration (Drivers) | Code Review (Drivers) |
+| Custom filesystem | Custom Integration (Filesystems) | Code Review (Filesystems) |
+| Custom networking | Custom Integration (Networking) | Code Review (Networking) |
+| Contributing to OSv | Code Review | Best Practices (Introduction) |
 
 ---
 

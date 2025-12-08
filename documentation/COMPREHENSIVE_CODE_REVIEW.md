@@ -121,9 +121,9 @@ malloc/free (application level)
 - Low fragmentation through pool segregation
 
 **Issues Identified:**
-1. **VFS Coarse Locking**: As noted in issue #450, VFS read/write operations have coarse-grained locking affecting disk I/O performance
-2. **Memory Pool Tuning**: Issue #1013 suggests self-tuning logic needed for L1/L2 pools
-3. **Initial Memory Requirement**: 11MB minimum is high compared to other unikernels
+1. **VFS Coarse Locking** (Issue #450, Open): VFS read/write operations have coarse-grained locking affecting disk I/O performance. **Workaround:** Use ROFS for read-only workloads, VirtioFS for better performance, or minimize concurrent file access.
+2. **Memory Pool Tuning** (Issue #1013, Open): Self-tuning logic needed for L1/L2 pools. **Workaround:** Manual tuning via conf_mem_l1_cache_size and conf_mem_l2_cache_size parameters.
+3. **Initial Memory Requirement**: 11MB minimum is high compared to other unikernels. **Mitigation:** Use conf_lazy_stack=1 for thread-heavy applications.
 
 **Recommendations:**
 - Implement memory pool auto-tuning

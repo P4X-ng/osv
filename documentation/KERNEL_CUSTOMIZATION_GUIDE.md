@@ -623,16 +623,21 @@ virtiofsd --socket-path=/tmp/vfsd.sock \
 
 #### CPU Feature Selection
 
+Add to `conf/x64.mk` or your custom profile:
+
 ```makefile
 # conf/x64.mk additions
 
 # Baseline (maximum compatibility)
+CXXFLAGS += -march=x86-64
 CFLAGS += -march=x86-64
 
 # Modern CPUs (2015+)
+CXXFLAGS += -march=x86-64-v3 -mfma -mavx2
 CFLAGS += -march=x86-64-v3 -mfma -mavx2
 
 # Latest CPUs (2017+)
+CXXFLAGS += -march=x86-64-v4 -mavx512f
 CFLAGS += -march=x86-64-v4 -mavx512f
 ```
 

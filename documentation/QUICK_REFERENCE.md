@@ -589,7 +589,7 @@ build/
 
 | Problem | Command |
 |---------|---------|
-| Check OSv version | `./scripts/build --version` |
+| Check OSv version | `git describe --tags` or check README.md |
 | View build log | `cat build.log` |
 | Check memory usage | `curl http://$IP:8000/os/memory/stats` |
 | View threads | `curl http://$IP:8000/os/threads` |

@@ -1092,7 +1092,10 @@ int MyDevice::init() {
     _irq->setup(vector);
     
     // Reset and initialize device
-    reset_device();
+    if (reset_device() != 0) {
+        kprintf("mydriver: device reset failed\n");
+        return -EIO;
+    }
     
     // Enable device
     write_reg(REG_CONTROL, CONTROL_ENABLE);
