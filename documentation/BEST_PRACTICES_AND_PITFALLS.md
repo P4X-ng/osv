@@ -46,8 +46,8 @@ Before porting an application to OSv, verify:
 #### Quick Compatibility Test
 
 ```bash
-# Check for fork/exec usage
-grep -r 'fork\|exec' myapp/src/
+# Check for fork/exec usage (whole words only)
+grep -rw 'fork\|exec' myapp/src/
 
 # Check syscall usage with strace (on Linux)
 strace -c ./myapp
@@ -56,7 +56,7 @@ strace -c ./myapp
 ldd ./myapp
 
 # Check for problematic patterns
-grep -r 'pipe\|signal\|setuid' myapp/src/
+grep -rw 'pipe\|signal\|setuid' myapp/src/
 ```
 
 ### 2.2 Porting Strategies

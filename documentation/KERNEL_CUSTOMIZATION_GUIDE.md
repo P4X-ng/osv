@@ -432,6 +432,8 @@ api.require('libz')                # Requires zlib
 ```
 **Savings:** ~500 KB - 1 MB
 
+**⚠️ Warning:** Disabling MMIO drivers may prevent boot on some systems. Test thoroughly on your target hypervisor before deploying. MMIO drivers are needed for PCI device discovery on many platforms.
+
 #### Strategy 5: Minimal Module Set
 
 ```bash
