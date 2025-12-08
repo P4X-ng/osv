@@ -11,11 +11,13 @@ This document provides a comprehensive code review of the OSv unikernel project,
 - Strong filesystem abstraction layer supporting ZFS, ROFS, RAMFS, and VirtioFS
 - Active development with focus on Linux ABI compatibility
 
-**Project Statistics:**
+**Project Statistics (approximate):**
 - Primary Languages: C++ (core), C (legacy/libc), Assembly (boot/arch-specific)
 - Core Code: ~20,000 lines across loader, runtime, and core modules
 - Architecture Support: x86_64 (mature) and AArch64 (stable)
 - Build System: GNU Make with Python scripting
+
+*Note: Use `cloc` or `tokei` on the repository for precise line counts*
 
 ---
 

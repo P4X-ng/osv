@@ -1239,7 +1239,7 @@ void MyVirtIODevice::fill_rx_queue() {
         void* buf = memory::alloc_page();
         _rx_buffers.push_back(buf);
         
-        // Add buffer to RX queue
+        // Add buffer to RX queue (false = write-only buffer)
         _rx_queue->add_buf(buf, PAGE_SIZE, false);
     }
     
