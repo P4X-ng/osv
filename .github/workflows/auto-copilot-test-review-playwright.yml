@@ -160,23 +160,54 @@ jobs:
           
           cat /tmp/test-analysis.md
 
-      - name: GitHub Copilot Test Review
-        uses: github/copilot-cli-action@main
-        with:
-          query: |
-            Review the test suite for this repository:
-            1. Verify all web-based functionality has Playwright tests (both headed and headless)
-            2. Identify missing test coverage for critical functionality
-            3. Check test quality and maintainability
-            4. Suggest improvements for test organization
-            5. Verify tests follow best practices (isolation, clarity, proper assertions)
-            6. Check for flaky tests or tests with timing issues
-            7. Ensure tests are running in CI/CD pipeline
-            
-            For any web tests not using Playwright, recommend migration.
-            Provide specific, actionable recommendations with file names.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Test Coverage Analysis
+        run: |
+          echo "## Test Coverage Analysis" > /tmp/coverage-analysis.md
+          echo "" >> /tmp/coverage-analysis.md
+          
+          # Check for test framework indicators
+          echo "### Test Framework Detection:" >> /tmp/coverage-analysis.md
+          
+          # Check for Playwright
+          if [ -f "playwright.config.js" ] || [ -f "playwright.config.ts" ] || grep -r "playwright" package.json 2>/dev/null; then
+            echo "✅ Playwright configuration detected" >> /tmp/coverage-analysis.md
+          else
+            echo "⚠️ No Playwright configuration found" >> /tmp/coverage-analysis.md
+          fi
+          
+          # Check for other test frameworks
+          if grep -r "jest\|mocha\|jasmine\|vitest" package.json 2>/dev/null; then
+            echo "✅ JavaScript test framework detected" >> /tmp/coverage-analysis.md
+          fi
+          
+          if find . -name "*.test.js" -o -name "*.test.ts" -o -name "*.spec.js" -o -name "*.spec.ts" | grep -q .; then
+            echo "✅ Test files found" >> /tmp/coverage-analysis.md
+          else
+            echo "⚠️ No test files detected" >> /tmp/coverage-analysis.md
+          fi
+          
+          # Check for test directories
+          echo "" >> /tmp/coverage-analysis.md
+          echo "### Test Organization:" >> /tmp/coverage-analysis.md
+          
+          for dir in tests test __tests__ spec e2e; do
+            if [ -d "$dir" ]; then
+              test_count=$(find "$dir" -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.cc" -o -name "*.cpp" | wc -l)
+              echo "✅ Found $dir/ directory with $test_count test files" >> /tmp/coverage-analysis.md
+            fi
+          done
+          
+          # Check for CI test configuration
+          echo "" >> /tmp/coverage-analysis.md
+          echo "### CI/CD Test Integration:" >> /tmp/coverage-analysis.md
+          
+          if find .github/workflows -name "*.yml" -o -name "*.yaml" 2>/dev/null | xargs grep -l "test\|playwright" 2>/dev/null | grep -q .; then
+            echo "✅ Tests appear to be integrated in CI/CD" >> /tmp/coverage-analysis.md
+          else
+            echo "⚠️ No test integration found in CI/CD workflows" >> /tmp/coverage-analysis.md
+          fi
+          
+          cat /tmp/coverage-analysis.md
         continue-on-error: true
 
       - name: Create or Update Test Review Issue
@@ -187,6 +218,13 @@ jobs:
             const fs = require('fs');
             const analysis = fs.readFileSync('/tmp/test-analysis.md', 'utf8');
             
+            let coverageAnalysis = '';
+            try {
+              coverageAnalysis = fs.readFileSync('/tmp/coverage-analysis.md', 'utf8');
+            } catch (e) {
+              coverageAnalysis = 'Coverage analysis not available.';
+            }
+            
             const date = new Date().toISOString().split('T')[0];
             const title = `Test Coverage Review - ${date}`;
             
@@ -195,6 +233,8 @@ jobs:
             This automated review ensures proper test coverage with Playwright for web tests.
             
             ${analysis}
+            
+            ${coverageAnalysis}
             
             ## Playwright Test Status
             
