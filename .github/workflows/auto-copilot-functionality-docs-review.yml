@@ -181,8 +181,13 @@ jobs:
               class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
               docstring_count=$(grep -c '"""' "$file" 2>/dev/null || echo 0)
               
+              # Ensure variables are numeric
+              func_count=${func_count:-0}
+              class_count=${class_count:-0}
+              docstring_count=${docstring_count:-0}
+              
               total=$((func_count + class_count))
-              if [ $total -gt 0 ] && [ $docstring_count -eq 0 ]; then
+              if [ "$total" -gt 0 ] && [ "$docstring_count" -eq 0 ]; then
                 echo "⚠️ $file: $total definitions, no docstrings" >> /tmp/doc-analysis.md
               fi
             done
@@ -202,8 +207,13 @@ jobs:
               class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
               jsdoc_count=$(grep -c '/\*\*' "$file" 2>/dev/null || echo 0)
               
+              # Ensure variables are numeric
+              func_count=${func_count:-0}
+              class_count=${class_count:-0}
+              jsdoc_count=${jsdoc_count:-0}
+              
               total=$((func_count + class_count))
-              if [ $total -gt 5 ] && [ $jsdoc_count -eq 0 ]; then
+              if [ "$total" -gt 5 ] && [ "$jsdoc_count" -eq 0 ]; then
                 echo "⚠️ $file: ~$total definitions, no JSDoc comments" >> /tmp/doc-analysis.md
               fi
             done
@@ -211,23 +221,73 @@ jobs:
           
           cat /tmp/doc-analysis.md
 
-      - name: GitHub Copilot Documentation Review
-        uses: github/copilot-cli-actions@v1
-        with:
-          query: |
-            Review the documentation for this repository:
-            1. Check README.md completeness and quality
-            2. Verify all features and functionality are documented
-            3. Check for installation and usage instructions
-            4. Identify missing or outdated documentation
-            5. Suggest improvements for clarity and completeness
-            6. Verify code comments and inline documentation
-            7. Check for API documentation if applicable
-            8. Ensure contributing guidelines are present
+      - name: Advanced Documentation Review
+        run: |
+          echo "## Advanced Documentation Review" > /tmp/advanced-doc-review.md
+          echo "" >> /tmp/advanced-doc-review.md
+          
+          # Check for code documentation patterns
+          echo "### Code Documentation Analysis:" >> /tmp/advanced-doc-review.md
+          
+          # Check C/C++ files for documentation
+          if find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | grep -q .; then
+            echo "" >> /tmp/advanced-doc-review.md
+            echo "#### C/C++ Documentation:" >> /tmp/advanced-doc-review.md
             
-            Provide specific recommendations with file names and sections.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l)
+            documented_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -exec grep -l "/\*\*\|///" {} \; | wc -l)
+            
+            echo "- Total C/C++ files: $total_files" >> /tmp/advanced-doc-review.md
+            echo "- Files with documentation: $documented_files" >> /tmp/advanced-doc-review.md
+            
+            if [ $documented_files -eq 0 ] && [ $total_files -gt 0 ]; then
+              echo "⚠️ No C/C++ files contain documentation comments" >> /tmp/advanced-doc-review.md
+            elif [ $total_files -gt 0 ]; then
+              coverage=$((documented_files * 100 / total_files))
+              echo "✅ Documentation coverage: ${coverage}%" >> /tmp/advanced-doc-review.md
+            fi
+          fi
+          
+          # Check for API documentation
+          echo "" >> /tmp/advanced-doc-review.md
+          echo "### API Documentation:" >> /tmp/advanced-doc-review.md
+          
+          if [ -f "Doxyfile" ]; then
+            echo "✅ Doxygen configuration found" >> /tmp/advanced-doc-review.md
+          else
+            echo "⚠️ No Doxygen configuration found" >> /tmp/advanced-doc-review.md
+          fi
+          
+          # Check for build documentation
+          echo "" >> /tmp/advanced-doc-review.md
+          echo "### Build Documentation:" >> /tmp/advanced-doc-review.md
+          
+          if [ -f "Makefile" ]; then
+            echo "✅ Makefile found" >> /tmp/advanced-doc-review.md
+            if grep -q "help\|usage" Makefile; then
+              echo "✅ Makefile contains help/usage information" >> /tmp/advanced-doc-review.md
+            else
+              echo "⚠️ Makefile lacks help/usage information" >> /tmp/advanced-doc-review.md
+            fi
+          fi
+          
+          # Check for architecture documentation
+          echo "" >> /tmp/advanced-doc-review.md
+          echo "### Architecture Documentation:" >> /tmp/advanced-doc-review.md
+          
+          arch_docs=0
+          for doc in ARCHITECTURE.md DESIGN.md docs/architecture.md docs/design.md; do
+            if [ -f "$doc" ]; then
+              echo "✅ Found: $doc" >> /tmp/advanced-doc-review.md
+              arch_docs=$((arch_docs + 1))
+            fi
+          done
+          
+          if [ $arch_docs -eq 0 ]; then
+            echo "⚠️ No architecture documentation found" >> /tmp/advanced-doc-review.md
+          fi
+          
+          cat /tmp/advanced-doc-review.md
         continue-on-error: true
 
       - name: Create Documentation Review Report
@@ -237,6 +297,13 @@ jobs:
           script: |
             const fs = require('fs');
             const analysis = fs.readFileSync('/tmp/doc-analysis.md', 'utf8');
+            
+            let advancedAnalysis = '';
+            try {
+              advancedAnalysis = fs.readFileSync('/tmp/advanced-doc-review.md', 'utf8');
+            } catch (e) {
+              advancedAnalysis = 'Advanced documentation review not available.';
+            }
             
             const date = new Date().toISOString().split('T')[0];
             const title = `Code Functionality & Documentation Review - ${date}`;
@@ -250,6 +317,8 @@ jobs:
             ## Build Status: ${buildEmoji} ${buildStatus}
             
             ${analysis}
+            
+            ${advancedAnalysis}
             
             ## Functionality Review
             
@@ -305,7 +374,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: recentIssue.number,
-                body: `## Updated Analysis (${date})\n\nBuild Status: ${buildEmoji} ${buildStatus}\n\n${analysis}`
+                body: `## Updated Analysis (${date})\n\nBuild Status: ${buildEmoji} ${buildStatus}\n\n${analysis}\n\n${advancedAnalysis}`
               });
             } else {
               await github.rest.issues.create({
