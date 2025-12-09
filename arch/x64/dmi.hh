@@ -13,5 +13,6 @@
 extern std::string dmi_bios_vendor;
 
 void dmi_probe();
+void dmi_probe_uefi();
 
 #endif

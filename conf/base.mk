@@ -12,3 +12,6 @@ conf_cxx_level=gnu++11
 
 conf_lazy_stack=0
 conf_lazy_stack_invariant=0
+
+# UEFI boot support (disabled by default)
+conf_uefi=0
