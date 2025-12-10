@@ -422,7 +422,7 @@ static int virtiofs_getattr(struct vnode* vnode, struct vattr* attr)
 #define virtiofs_inactive    ((vnop_inactive_t)vop_nullop)
 #define virtiofs_truncate    ((vnop_truncate_t)vop_erofs)
 #define virtiofs_link        ((vnop_link_t)vop_erofs)
-#define virtiofs_arc         virtiofs_cache
+#define virtiofs_arc         ((vnop_cache_t) nullptr)
 #define virtiofs_fallocate   ((vnop_fallocate_t)vop_erofs)
 #define virtiofs_fsync       ((vnop_fsync_t)vop_nullop)
 #define virtiofs_symlink     ((vnop_symlink_t)vop_erofs)
@@ -447,7 +447,8 @@ struct vnops virtiofs_vnops = {
     virtiofs_inactive,  /* inactive */
     virtiofs_truncate,  /* truncate - returns error when called */
     virtiofs_link,      /* link - returns error when called */
-    virtiofs_arc,       /* arc - implemented for mmap support */
+    virtiofs_arc,       /* arc */ //TODO: Implement to allow memory re-use when
+                        // mapping files
     virtiofs_fallocate, /* fallocate - returns error when called */
     virtiofs_readlink,  /* read link */
     virtiofs_symlink    /* symbolic link - returns error when called */
