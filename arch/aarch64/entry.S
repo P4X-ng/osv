@@ -140,6 +140,7 @@ thread_main:
 .equ ESR_EC_DATA_ABORT,0x25 // Exception Class Data Abort value
 .equ ESR_EC_INSN_ABORT,0x21 // Exception Class Instruction Abort value
 .equ ESR_EC_SVC64,0x15      // Exception Class for SVC (System Call) in 64-bit state
+.equ ESR_EC_FP_EXCEPTION,0x2C // Exception Class for FP exception trapped to EL1
 
 .equ ESR_ISS_BEG,0          // Instruction-Specific Syndrome field begin in ESR
 .equ ESR_ISS_END,23         // Instruction-Specific Syndrome field end in ESR
@@ -225,6 +226,8 @@ entry_curr_el_sp\stack\()_sync:
         ubfm    x3, x1, #ESR_FLT_BEG, #ESR_FLT_END // FLT -> X3
         cmp     x2, #ESR_EC_SVC64
         b.eq    handle_system_call_sp\stack
+        cmp     x2, #ESR_EC_FP_EXCEPTION
+        b.eq    handle_fp_exception_sp\stack
         cmp     x2, #ESR_EC_DATA_ABORT
         b.eq    handle_mem_abort_sp\stack
         cmp     x2, #ESR_EC_INSN_ABORT
@@ -261,6 +264,14 @@ handle_system_call_sp\stack:
 
         str     x0, [sp, #0] // copy the result in x0 directly into the frame so that it can be restored
         msr     tpidr_el0, x19 //Restore thread pointer
+        pop_state_from_exception_frame
+        eret
+        .cfi_endproc
+handle_fp_exception_sp\stack:
+        .cfi_startproc
+        mov     x0, sp  // save exception_frame to x0
+        bl      fp_exception
+        msr     tpidr_el0, x19 // Restore thread pointer
         pop_state_from_exception_frame
         eret
         .cfi_endproc

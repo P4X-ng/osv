@@ -80,6 +80,7 @@ extern class interrupt_table idt;
 
 extern "C" {
     void page_fault(exception_frame* ef);
+    void fp_exception(exception_frame* ef);
 }
 
 bool fixup_fault(exception_frame*);
