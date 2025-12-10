@@ -181,14 +181,22 @@ jobs:
               class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
               docstring_count=$(grep -c '"""' "$file" 2>/dev/null || echo 0)
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and strip whitespace
+              func_count=$(echo "$func_count" | tr -d '\n\r\t ' | grep -E '^[0-9]+$' || echo 0)
+              class_count=$(echo "$class_count" | tr -d '\n\r\t ' | grep -E '^[0-9]+$' || echo 0)
+              docstring_count=$(echo "$docstring_count" | tr -d '\n\r\t ' | grep -E '^[0-9]+$' || echo 0)
+              
+              # Set defaults if empty
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               docstring_count=${docstring_count:-0}
               
-              total=$((func_count + class_count))
-              if [ "$total" -gt 0 ] && [ "$docstring_count" -eq 0 ]; then
-                echo "⚠️ $file: $total definitions, no docstrings" >> /tmp/doc-analysis.md
+              # Perform arithmetic only if variables are valid numbers
+              if [ "$func_count" -eq "$func_count" ] 2>/dev/null && [ "$class_count" -eq "$class_count" ] 2>/dev/null; then
+                total=$((func_count + class_count))
+                if [ "$total" -gt 0 ] && [ "$docstring_count" -eq 0 ]; then
+                  echo "⚠️ $file: $total definitions, no docstrings" >> /tmp/doc-analysis.md
+                fi
               fi
             done
           fi
@@ -207,14 +215,22 @@ jobs:
               class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
               jsdoc_count=$(grep -c '/\*\*' "$file" 2>/dev/null || echo 0)
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and strip whitespace
+              func_count=$(echo "$func_count" | tr -d '\n\r\t ' | grep -E '^[0-9]+$' || echo 0)
+              class_count=$(echo "$class_count" | tr -d '\n\r\t ' | grep -E '^[0-9]+$' || echo 0)
+              jsdoc_count=$(echo "$jsdoc_count" | tr -d '\n\r\t ' | grep -E '^[0-9]+$' || echo 0)
+              
+              # Set defaults if empty
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               jsdoc_count=${jsdoc_count:-0}
               
-              total=$((func_count + class_count))
-              if [ "$total" -gt 5 ] && [ "$jsdoc_count" -eq 0 ]; then
-                echo "⚠️ $file: ~$total definitions, no JSDoc comments" >> /tmp/doc-analysis.md
+              # Perform arithmetic only if variables are valid numbers
+              if [ "$func_count" -eq "$func_count" ] 2>/dev/null && [ "$class_count" -eq "$class_count" ] 2>/dev/null; then
+                total=$((func_count + class_count))
+                if [ "$total" -gt 5 ] && [ "$jsdoc_count" -eq 0 ]; then
+                  echo "⚠️ $file: ~$total definitions, no JSDoc comments" >> /tmp/doc-analysis.md
+                fi
               fi
             done
           fi
@@ -237,14 +253,25 @@ jobs:
             total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l)
             documented_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -exec grep -l "/\*\*\|///" {} \; | wc -l)
             
+            # Ensure variables are numeric and strip whitespace
+            total_files=$(echo "$total_files" | tr -d '\n\r\t ' | grep -E '^[0-9]+$' || echo 0)
+            documented_files=$(echo "$documented_files" | tr -d '\n\r\t ' | grep -E '^[0-9]+$' || echo 0)
+            
+            # Set defaults if empty
+            total_files=${total_files:-0}
+            documented_files=${documented_files:-0}
+            
             echo "- Total C/C++ files: $total_files" >> /tmp/advanced-doc-review.md
             echo "- Files with documentation: $documented_files" >> /tmp/advanced-doc-review.md
             
-            if [ $documented_files -eq 0 ] && [ $total_files -gt 0 ]; then
-              echo "⚠️ No C/C++ files contain documentation comments" >> /tmp/advanced-doc-review.md
-            elif [ $total_files -gt 0 ]; then
-              coverage=$((documented_files * 100 / total_files))
-              echo "✅ Documentation coverage: ${coverage}%" >> /tmp/advanced-doc-review.md
+            # Perform arithmetic only if variables are valid numbers
+            if [ "$documented_files" -eq "$documented_files" ] 2>/dev/null && [ "$total_files" -eq "$total_files" ] 2>/dev/null; then
+              if [ "$documented_files" -eq 0 ] && [ "$total_files" -gt 0 ]; then
+                echo "⚠️ No C/C++ files contain documentation comments" >> /tmp/advanced-doc-review.md
+              elif [ "$total_files" -gt 0 ]; then
+                coverage=$((documented_files * 100 / total_files))
+                echo "✅ Documentation coverage: ${coverage}%" >> /tmp/advanced-doc-review.md
+              fi
             fi
           fi
           
