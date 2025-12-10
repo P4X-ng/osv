@@ -1728,7 +1728,7 @@ void jvm_balloon_vma::detach_balloon()
 {
     // Remove from vma_list and vma_range_set while holding the read lock.
     // This must be called before the VMA is deleted.
-    assert(!_detached);
+    assert(!_detached && "VMA already detached");
     vma_list.erase(*this);
     WITH_LOCK(vma_range_set_mutex.for_write()) {
         vma_range_set.erase(vma_range(this));
@@ -1839,7 +1839,7 @@ ulong map_jvm(unsigned char* jvm_addr, size_t size, size_t align, balloon_ptr b)
                         vma_range_set.erase(vma_range(&v));
                     }
                     // Mark as detached since we already erased it from vma_list
-                    static_cast<jvm_balloon_vma*>(&v)->_detached = true;
+                    static_cast<jvm_balloon_vma*>(&v)->mark_detached();
                     // Finish the move. In practice, it will temporarily remap an
                     // anon mapping here, but this should be rare. Let's not
                     // complicate the code to optimize it. There are no

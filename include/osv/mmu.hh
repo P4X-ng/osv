@@ -166,7 +166,14 @@ public:
     virtual void split(uintptr_t edge) override;
     virtual error sync(uintptr_t start, uintptr_t end) override;
     virtual void fault(uintptr_t addr, exception_frame *ef) override;
+    // Detach the balloon VMA from vma_list and vma_range_set.
+    // This must be called before scheduling the VMA for deferred deletion
+    // to avoid deadlock when the destructor needs to acquire write locks.
+    // Must be called while holding vma_list_mutex read lock.
     void detach_balloon();
+    // Mark the VMA as detached without removing it from vma_list.
+    // Used when the VMA is manually removed from vma_list before deletion.
+    void mark_detached() { _detached = true; }
     unsigned char *jvm_addr() { return _jvm_addr; }
     unsigned char *effective_jvm_addr() { return _effective_jvm_addr; }
     bool add_partial(size_t partial, unsigned char *eff);
