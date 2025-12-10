@@ -1,5 +1,6 @@
 from osv.modules import api
 
-java_base = api.require('java-base')
-java_base.non_isolated_jvm = True
+# This module is deprecated. Use java-base instead.
+# Kept for backward compatibility.
+api.require('java-base')
 provides = ['java-cmd']
