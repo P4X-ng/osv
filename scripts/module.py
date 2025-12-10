@@ -15,6 +15,8 @@ class jvm_app(api.basic_app):
         return ['java.so'] + self.app.get_jvm_args() + self.app.get_multimain_lines()
 
     def add(self, app):
+        if self.app is not None:
+            raise Exception("Multiple Java applications are not supported. The isolated Java mode that supported multiple apps has been removed. Please use only one Java application per image.")
         self.app = app
 
     def has_any_app(self):
