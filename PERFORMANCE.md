@@ -60,7 +60,7 @@ void* pages = memory::alloc_page();
    public:
        ~ObjectPool() {
            // Clean up all objects in the pool
-           for (auto obj : free_list) {
+           for (const auto& obj : free_list) {
                delete obj;
            }
        }
@@ -76,6 +76,8 @@ void* pages = memory::alloc_page();
        
        void deallocate(Object* obj) {
            if (obj) {
+               // Reset object state before returning to pool
+               obj->reset();  // Assuming Object has a reset() method
                free_list.push_back(obj);
            }
        }

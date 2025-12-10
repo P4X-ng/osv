@@ -97,18 +97,23 @@ Configure OSv to use AWS IMDS:
 // Fetch instance metadata (simplified example)
 #include <curl/curl.h>
 #include <string>
+#include <iostream>
 
 std::string get_instance_id() {
     CURL* curl = curl_easy_init();
-    if (!curl) return "";
+    if (!curl) {
+        std::cerr << "Failed to initialize CURL" << std::endl;
+        return "";
+    }
     
     std::string url = "http://169.254.169.254/latest/meta-data/instance-id";
     std::string response;
     
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, 
-        [](void* contents, size_t size, size_t nmemb, void* userp) {
-            ((std::string*)userp)->append((char*)contents, size * nmemb);
+        [](void* contents, size_t size, size_t nmemb, void* userp) -> size_t {
+            static_cast<std::string*>(userp)->append(
+                static_cast<char*>(contents), size * nmemb);
             return size * nmemb;
         });
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -116,7 +121,13 @@ std::string get_instance_id() {
     CURLcode res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
     
-    return (res == CURLE_OK) ? response : "";
+    if (res != CURLE_OK) {
+        std::cerr << "Failed to fetch instance ID: " 
+                  << curl_easy_strerror(res) << std::endl;
+        return "";
+    }
+    
+    return response;
 }
 ```
 
