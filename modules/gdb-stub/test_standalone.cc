@@ -128,6 +128,9 @@ void test_hex_conversion() {
     std::ostringstream oss;
     
     // Output in little-endian format (byte by byte)
+    // 0x1234 = high byte 0x12, low byte 0x34
+    // In little-endian: low byte first, so 0x34 0x12
+    // As hex string: "3412"
     for (size_t i = 0; i < 2; i++) {
         uint8_t byte = (value >> (i * 8)) & 0xFF;
         oss << std::hex << std::setw(2) << std::setfill('0') 
