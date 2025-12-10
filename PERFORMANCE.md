@@ -106,10 +106,11 @@ void* pages = memory::alloc_page();
 4. **Memory Alignment**:
    ```cpp
    // Align data structures to cache lines (64 bytes)
+   // Note: Assumes std::atomic<int> is 4 bytes on target platform
    struct alignas(64) CacheLine {
        // Prevents false sharing between CPUs
        std::atomic<int> counter;
-       char padding[60];
+       char padding[64 - sizeof(std::atomic<int>)];  // Dynamic padding
    };
    ```
 
@@ -366,7 +367,7 @@ auto hit_rate = stats.hits / (stats.hits + stats.misses);
            auto it = cache.find(key);
            if (it != cache.end()) return it->second;
            auto result = func(args...);
-           cache[key] = result;
+           cache.emplace(key, result);  // Avoids default construction
            return result;
        }
    };

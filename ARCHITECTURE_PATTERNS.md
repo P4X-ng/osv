@@ -732,12 +732,14 @@ Result<File*, int> open_file(const char* path) {
    class error_with_context : public std::exception {
        std::string message;
        std::string context;
+       mutable std::string full_message;
    public:
        error_with_context(const std::string& msg, const std::string& ctx)
-           : message(msg), context(ctx) {}
+           : message(msg), context(ctx) {
+           full_message = message + " (in: " + context + ")";
+       }
        const char* what() const noexcept override {
-           static std::string full = message + " (in: " + context + ")";
-           return full.c_str();
+           return full_message.c_str();
        }
    };
    ```

@@ -112,9 +112,14 @@ std::string get_instance_id() {
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, 
         [](void* contents, size_t size, size_t nmemb, void* userp) -> size_t {
+            // Check for overflow
+            if (size > 0 && nmemb > SIZE_MAX / size) {
+                return 0;  // Indicate error
+            }
+            size_t total_size = size * nmemb;
             static_cast<std::string*>(userp)->append(
-                static_cast<char*>(contents), size * nmemb);
-            return size * nmemb;
+                static_cast<char*>(contents), total_size);
+            return total_size;
         });
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     

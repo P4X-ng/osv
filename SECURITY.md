@@ -55,9 +55,10 @@ std::string safe_path = std::string("/path/") + name;
 ### 2. Credential Management
 
 **Current Status**: ✅ SECURE
-- No hardcoded passwords or API keys found in the codebase
+- No hardcoded passwords or API keys found in the codebase (verified using `grep -r` for common patterns)
 - Test file `tests/tst-rename.cc` contains a test constant named `SECRET` which is just test data, not a real credential
 - GitHub API token usage in `scripts/github_releases_util.py` correctly uses environment variables
+- Scanning methodology: Manual review and pattern matching for common credential patterns (`password=`, `api_key`, `secret=`, `token=`)
 
 **Best Practices**:
 - Never commit credentials to the repository
@@ -79,7 +80,7 @@ OSv uses a sophisticated memory management system with:
 - Lock-free data structures require careful memory ordering
 
 **Analysis Results**:
-- 1,839 instances of dynamic memory allocation found
+- 1,839 instances of dynamic memory allocation found (using `grep -r` for `new`, `malloc`, `calloc`, `free`, `delete`)
 - Most are properly paired with cleanup code
 - Smart pointers used in modern C++ portions
 
