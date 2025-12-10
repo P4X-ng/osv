@@ -181,7 +181,12 @@ jobs:
               class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
               docstring_count=$(grep -c '"""' "$file" 2>/dev/null || echo 0)
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and strip whitespace
+              func_count=$(echo "${func_count:-0}" | tr -d '\n\r' | grep -o '[0-9]*' | head -1)
+              class_count=$(echo "${class_count:-0}" | tr -d '\n\r' | grep -o '[0-9]*' | head -1)
+              docstring_count=$(echo "${docstring_count:-0}" | tr -d '\n\r' | grep -o '[0-9]*' | head -1)
+              
+              # Set defaults if empty
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               docstring_count=${docstring_count:-0}
@@ -207,7 +212,12 @@ jobs:
               class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
               jsdoc_count=$(grep -c '/\*\*' "$file" 2>/dev/null || echo 0)
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and strip whitespace
+              func_count=$(echo "${func_count:-0}" | tr -d '\n\r' | grep -o '[0-9]*' | head -1)
+              class_count=$(echo "${class_count:-0}" | tr -d '\n\r' | grep -o '[0-9]*' | head -1)
+              jsdoc_count=$(echo "${jsdoc_count:-0}" | tr -d '\n\r' | grep -o '[0-9]*' | head -1)
+              
+              # Set defaults if empty
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               jsdoc_count=${jsdoc_count:-0}
