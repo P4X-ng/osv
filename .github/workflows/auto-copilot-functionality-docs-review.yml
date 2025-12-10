@@ -132,7 +132,7 @@ jobs:
             word_count=$(wc -w < README.md | tr -d ' ')
             echo "- Word count: $word_count" >> /tmp/doc-analysis.md
             
-            if [ $word_count -lt 50 ]; then
+            if [ "$word_count" -lt 50 ]; then
               echo "⚠️ README.md is very short (< 50 words)" >> /tmp/doc-analysis.md
             else
               echo "✅ README.md has adequate content" >> /tmp/doc-analysis.md
@@ -240,9 +240,9 @@ jobs:
             echo "- Total C/C++ files: $total_files" >> /tmp/advanced-doc-review.md
             echo "- Files with documentation: $documented_files" >> /tmp/advanced-doc-review.md
             
-            if [ $documented_files -eq 0 ] && [ $total_files -gt 0 ]; then
+            if [ "$documented_files" -eq 0 ] && [ "$total_files" -gt 0 ]; then
               echo "⚠️ No C/C++ files contain documentation comments" >> /tmp/advanced-doc-review.md
-            elif [ $total_files -gt 0 ]; then
+            elif [ "$total_files" -gt 0 ]; then
               coverage=$((documented_files * 100 / total_files))
               echo "✅ Documentation coverage: ${coverage}%" >> /tmp/advanced-doc-review.md
             fi
@@ -283,7 +283,7 @@ jobs:
             fi
           done
           
-          if [ $arch_docs -eq 0 ]; then
+          if [ "$arch_docs" -eq 0 ]; then
             echo "⚠️ No architecture documentation found" >> /tmp/advanced-doc-review.md
           fi
           
