@@ -70,14 +70,22 @@ void thread::setup_tcb()
 
 void thread::switch_to()
 {
-    // Context switch to this thread
-    // Save current thread state and restore new thread state
-    // TODO: Implement full context switch with register save/restore
-    switch_to_first();
+    // TODO: Implement full context switch between running threads
+    // This should:
+    // 1. Save current thread's register state (sp, ra, s0-s11, tp)
+    // 2. Save FPU state if needed
+    // 3. Switch to new thread's stack
+    // 4. Restore new thread's register state
+    // 5. Update current thread pointer
+    // 6. Return to new thread's saved program counter
+    // For now, this is a stub that needs assembly implementation
+    // similar to arch/aarch64/sched.S or arch/x64/arch-switch.hh
 }
 
 void thread::switch_to_from_privileged()
 {
+    // TODO: Implement context switch from privileged mode
+    // This is used when switching from interrupt/exception handlers
     switch_to();
 }
 

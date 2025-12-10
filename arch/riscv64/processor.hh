@@ -71,11 +71,16 @@ inline void write_satp(u64 val) {
 
 inline u64 read_hartid()
 {
-    u64 hartid;
-    // Read hardware thread ID from tp register (set by firmware/bootloader)
-    // Or from mhartid CSR if available in supervisor mode
-    // For now, we'll use a placeholder implementation
-    asm volatile("csrr %0, sscratch" : "=r" (hartid));
+    // TODO: Proper implementation of hardware thread ID reading
+    // In RISC-V, the hardware thread ID (hart ID) is typically:
+    // 1. Passed by firmware in a0 register during boot
+    // 2. Read from mhartid CSR in M-mode (not accessible in S-mode)
+    // 3. Stored in a per-CPU data structure after boot
+    // This placeholder returns 0, which works for single-CPU systems
+    // but needs proper implementation for SMP support
+    u64 hartid = 0;
+    // Actual implementation should read from a per-CPU variable:
+    // asm volatile("ld %0, hartid_offset(tp)" : "=r" (hartid));
     return hartid;
 }
 

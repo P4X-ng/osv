@@ -22,6 +22,10 @@ constexpr int max_phys_addr_size = 56; // RISC-V supports up to 56-bit physical 
 extern u64 mem_addr;
 extern void *elf_phys_start;
 
+// RISC-V Sv39 paging constants
+constexpr int PPN_BITS = 44;           // Physical Page Number is 44 bits in Sv39
+constexpr u64 PTE_FLAGS_MASK = 0x3FF;  // Lower 10 bits are flags in RISC-V PTE
+
 enum class mattr {
     normal,
     dev
@@ -80,7 +84,7 @@ inline bool pt_element_common<N>::rsvd_bit(unsigned off) const {
 template<int N>
 inline phys pt_element_common<N>::addr() const {
     // PPN (Physical Page Number) is in bits 10-53
-    u64 ppn = (x >> 10) & ((1ul << 44) - 1);
+    u64 ppn = (x >> 10) & ((1ul << PPN_BITS) - 1);
     return ppn << page_size_shift;
 }
 
@@ -131,12 +135,8 @@ inline void pt_element_common<N>::set_rsvd_bit(unsigned off, bool v) {
 template<int N>
 inline void pt_element_common<N>::set_addr(phys addr, bool large) {
     u64 ppn = addr >> page_size_shift;
-    x = (x & 0x3FF) | (ppn << 10); // Keep low 10 bits, set PPN
-    if (large) {
-        x |= 0x1; // Set valid bit
-    } else {
-        x |= 0x1; // Set valid bit for non-leaf too
-    }
+    x = (x & PTE_FLAGS_MASK) | (ppn << 10); // Keep low 10 bits (flags), set PPN
+    x |= 0x1; // Set valid bit
 }
 
 template<int N>
