@@ -59,6 +59,7 @@ HOST_CXX := g++
 
 detect_arch = $(word 1, $(shell { echo "x64        __x86_64__";  \
                                   echo "aarch64    __aarch64__"; \
+                                  echo "riscv64    __riscv"; \
                        } | $1 -E -xc - | grep ' 1$$'))
 
 host_arch := $(call detect_arch, $(HOST_CXX))
@@ -765,8 +766,9 @@ solaris += bsd/sys/cddl/contrib/opensolaris/uts/common/zmod/zmod_subr.o
 solaris += bsd/sys/cddl/contrib/opensolaris/uts/common/zmod/zutil.o
 
 zfs += bsd/sys/cddl/contrib/opensolaris/common/zfs/zfeature_common.o
-zfs += bsd/sys/cddl/contrib/opensolaris/common/zfs/zfs_comutil.o
-zfs += bsd/sys/cddl/contrib/opensolaris/common/zfs/zfs_o
+zfs += bsd/sys/cddl/contrib/opensolaris/common/zfs/zfso-dangling-pointer
+libc += stdlib/strtol.o
+libc += stdlib/strtod.o
 libc += stdlib/wcstol.o
 ifeq ($(arch),x64)
 libc += stdlib/unimplemented.o
