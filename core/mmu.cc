@@ -1838,6 +1838,8 @@ ulong map_jvm(unsigned char* jvm_addr, size_t size, size_t align, balloon_ptr b)
                     WITH_LOCK(vma_range_set_mutex.for_write()) {
                         vma_range_set.erase(vma_range(&v));
                     }
+                    // Mark as detached since we already erased it from vma_list
+                    static_cast<jvm_balloon_vma*>(&v)->_detached = true;
                     // Finish the move. In practice, it will temporarily remap an
                     // anon mapping here, but this should be rare. Let's not
                     // complicate the code to optimize it. There are no

@@ -179,6 +179,7 @@ public:
 protected:
     balloon_ptr _balloon;
     unsigned char *_jvm_addr;
+    bool _detached = false;
 private:
     unsigned char *_effective_jvm_addr = nullptr;
     uintptr_t _partial_addr = 0;
@@ -187,7 +188,6 @@ private:
     unsigned _real_perm;
     unsigned _real_flags;
     uintptr_t _real_size;
-    bool _detached = false;
 };
 #endif
 
