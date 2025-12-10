@@ -89,10 +89,26 @@ The current implementation supports:
 
 ## Limitations
 
-- Single-threaded debugging (multi-thread support planned)
-- Basic breakpoint support (hardware breakpoints not yet implemented)
-- Limited CPU state capture (enhancement in progress)
+- **Single-threaded debugging**: Multi-thread support planned
+- **Basic breakpoint support**: Hardware breakpoints not yet implemented
+- **Limited CPU state capture**: Enhancement in progress
+- **Memory access validation**: Current implementation uses basic validation; needs integration with OSv MMU for proper memory region checking and permission validation
+- **Security considerations**: Memory read/write operations should be used carefully in trusted environments only, as they currently lack comprehensive protection against accessing sensitive memory regions
 - Some advanced GDB features not yet supported
+
+## Security Considerations
+
+**Important**: The GDB stub module should only be enabled in development and debugging environments. The current implementation:
+
+- Allows memory read/write operations that could potentially access sensitive data
+- Does not implement full memory protection validation
+- Should not be enabled in production systems
+- Requires trusted network access (use firewall rules to restrict GDB port access)
+
+Future enhancements will include:
+- Integration with OSv's memory management for proper region validation
+- Access control lists for memory operations
+- Secure authentication for GDB connections
 
 ## Examples
 

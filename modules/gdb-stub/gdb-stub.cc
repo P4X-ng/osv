@@ -22,12 +22,6 @@
 
 namespace gdb {
 
-// Configuration constants
-constexpr size_t MAX_PACKET_SIZE = 4096;
-constexpr size_t MAX_MEMORY_ACCESS_SIZE = 4096;
-constexpr uint16_t MIN_TCP_PORT = 1;
-constexpr uint16_t MAX_TCP_PORT = 65535;
-
 // Packet implementation
 uint8_t Packet::checksum() const {
     uint8_t sum = 0;
@@ -497,17 +491,23 @@ std::string GdbStub::handle_read_memory(uint64_t addr, size_t length) {
     // Read memory and return as hex
     std::ostringstream oss;
     
-    // Validate address range for safety
-    // In a production implementation, should check:
-    // 1. Address is within valid memory regions
-    // 2. Memory is readable (not protected)
-    // 3. Length is reasonable (cap at some maximum)
+    // TODO: This is a basic implementation that needs proper memory validation
+    // A production implementation should:
+    // 1. Check if address range is within valid/mapped memory regions
+    // 2. Verify memory is readable (check page permissions)
+    // 3. Use safe memory access methods (e.g., probe_read)
+    // 4. Handle page faults gracefully
+    // 5. Respect memory protection and security boundaries
+    //
+    // Current implementation relies on exception handling which is not ideal
+    // and could potentially be used to probe sensitive memory regions.
+    // Integration with OSv's MMU and memory management is needed.
     
     if (length == 0 || length > MAX_MEMORY_ACCESS_SIZE) {
         return "E01"; // Invalid length
     }
     
-    // Basic check: ensure address is not null and reasonably aligned
+    // Basic check: ensure address is not null
     if (addr == 0) {
         return "E02"; // Invalid address
     }
@@ -515,8 +515,6 @@ std::string GdbStub::handle_read_memory(uint64_t addr, size_t length) {
     try {
         const uint8_t* ptr = reinterpret_cast<const uint8_t*>(addr);
         
-        // TODO: Add proper memory region validation
-        // For now, attempt to read and catch exceptions
         for (size_t i = 0; i < length; i++) {
             oss << std::hex << std::setw(2) << std::setfill('0') 
                 << static_cast<int>(ptr[i]);
@@ -531,6 +529,22 @@ std::string GdbStub::handle_read_memory(uint64_t addr, size_t length) {
 std::string GdbStub::handle_write_memory(uint64_t addr, const std::string& data) {
     // Write hex data to memory
     
+    // TODO: This is a basic implementation that needs proper memory validation
+    // A production implementation should:
+    // 1. Check if address range is within valid/mapped memory regions
+    // 2. Verify memory is writable (check page permissions, not read-only)
+    // 3. Ensure not writing to protected kernel memory regions
+    // 4. Use safe memory access methods
+    // 5. Implement access control to prevent security issues
+    // 6. Handle page faults and exceptions properly
+    //
+    // Current implementation is unsafe and could:
+    // - Corrupt kernel or critical data structures
+    // - Crash the system by writing to invalid addresses
+    // - Be exploited for privilege escalation
+    //
+    // Integration with OSv's MMU and memory protection is essential.
+    
     // Validate address and data length
     if (addr == 0) {
         return "E01"; // Invalid address
@@ -544,12 +558,6 @@ std::string GdbStub::handle_write_memory(uint64_t addr, const std::string& data)
     if (length > MAX_MEMORY_ACCESS_SIZE) {
         return "E03"; // Data too large
     }
-    
-    // TODO: Add proper memory region validation
-    // Should check:
-    // 1. Address range is writable
-    // 2. Not writing to protected/kernel memory
-    // 3. Proper permissions check
     
     try {
         uint8_t* ptr = reinterpret_cast<uint8_t*>(addr);
