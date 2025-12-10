@@ -7,7 +7,7 @@
 
 #include "gdb_transport.hh"
 #include "gdb_stub.hh"
-#include <osv/debug.hh>
+#include <osv/debug.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

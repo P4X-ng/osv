@@ -7,7 +7,7 @@
 
 #include "gdb_arch.hh"
 #include "gdb_stub.hh"
-#include <osv/debug.hh>
+#include <osv/debug.h>
 #include <osv/sched.hh>
 #include <cstring>
 #include <string>

@@ -6,18 +6,17 @@
  */
 
 #include "gdb_stub.hh"
-#include <osv/debug.hh>
-#include <thread>
+#include <osv/debug.h>
 
 // Entry point for the GDB stub shared library
 extern "C" int main(int argc, char** argv)
 {
     debug("gdb-stub: Module loaded\n");
     
-    // Start GDB stub in a separate thread so it doesn't block
-    std::thread gdb_thread(gdb_stub::gdb_stub_main);
-    gdb_thread.detach();
+    // Start GDB stub main function directly for now
+    // In a real implementation, this might be in a separate thread
+    gdb_stub::gdb_stub_main();
     
-    debug("gdb-stub: GDB stub thread started\n");
+    debug("gdb-stub: GDB stub module exiting\n");
     return 0;
 }

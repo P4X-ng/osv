@@ -9,7 +9,7 @@
 #include "gdb_protocol.hh"
 #include "gdb_transport.hh"
 #include "gdb_arch.hh"
-#include <osv/debug.hh>
+#include <osv/debug.h>
 #include <osv/sched.hh>
 #include <osv/mmu.hh>
 #include <cstring>
@@ -308,7 +308,7 @@ std::vector<uint8_t> gdb_stub::parse_hex(const std::string& hex_str)
     return data;
 }
 
-// Additional handler methods will be implemented in the next part...
+// Additional handler methods implementation...
 
 void gdb_stub::handle_continue(const std::string& params)
 {
