@@ -20,6 +20,7 @@
 #include <osv/device.h>
 #include <osv/file.h>
 #include <osv/mmio.hh>
+#include <osv/mmu-defs.hh>
 #include <osv/mount.h>
 #include <osv/prex.h>
 #include <osv/sched.hh>
@@ -266,6 +267,50 @@ static int virtiofs_read(struct vnode* vnode, struct file* fp, struct uio* uio,
         ioflag, *drv, *uio);
 }
 
+static int virtiofs_cache(struct vnode* vnode, struct file* fp, struct uio* uio)
+{
+    // Can't cache directories
+    if (vnode->v_type == VDIR) {
+        return EISDIR;
+    }
+    // Can't cache anything but regular files
+    if (vnode->v_type != VREG) {
+        return EINVAL;
+    }
+    // Can't start reading before the first byte
+    if (uio->uio_offset < 0) {
+        return EINVAL;
+    }
+    // Cache operation should read exactly one page
+    if (uio->uio_resid != mmu::page_size) {
+        return EINVAL;
+    }
+    // Can't read after the end of the file
+    if (uio->uio_offset >= vnode->v_size) {
+        return 0;
+    }
+
+    auto* inode = static_cast<virtiofs_inode*>(vnode->v_data);
+    auto* file_data = static_cast<virtiofs_file_data*>(fp->f_data);
+    auto* m_data = static_cast<virtiofs_mount_data*>(vnode->v_mount->m_data);
+    auto* drv = m_data->drv;
+    auto dax_mgr = m_data->dax_mgr;
+
+    // Total read amount is what they requested, or what is left
+    auto read_amt = std::min<uint64_t>(uio->uio_resid,
+        inode->attr.size - uio->uio_offset);
+
+    if (dax_mgr) {
+        // Try to read from DAX
+        if (!dax_mgr->read(*inode, file_data->file_handle, read_amt, *uio)) {
+            return 0;
+        }
+    }
+    // DAX unavailable or failed, use fallback
+    return virtiofs_read_fallback(*inode, file_data->file_handle, read_amt,
+        0, *drv, *uio);
+}
+
 // Checks if @buf (with size @len) points to a valid fuse_dirent (with its name
 // not exceeding @name_max) and if so returns @buf. Otherwise, returns nullptr.
 static fuse_dirent* parse_fuse_dirent(void* buf, size_t len, size_t name_max)
@@ -377,7 +422,7 @@ static int virtiofs_getattr(struct vnode* vnode, struct vattr* attr)
 #define virtiofs_inactive    ((vnop_inactive_t)vop_nullop)
 #define virtiofs_truncate    ((vnop_truncate_t)vop_erofs)
 #define virtiofs_link        ((vnop_link_t)vop_erofs)
-#define virtiofs_arc         ((vnop_cache_t) nullptr)
+#define virtiofs_arc         virtiofs_cache
 #define virtiofs_fallocate   ((vnop_fallocate_t)vop_erofs)
 #define virtiofs_fsync       ((vnop_fsync_t)vop_nullop)
 #define virtiofs_symlink     ((vnop_symlink_t)vop_erofs)
@@ -402,8 +447,7 @@ struct vnops virtiofs_vnops = {
     virtiofs_inactive,  /* inactive */
     virtiofs_truncate,  /* truncate - returns error when called */
     virtiofs_link,      /* link - returns error when called */
-    virtiofs_arc,       /* arc */ //TODO: Implement to allow memory re-use when
-                        // mapping files
+    virtiofs_arc,       /* arc */ // Implemented to enable memory-mapped file support
     virtiofs_fallocate, /* fallocate - returns error when called */
     virtiofs_readlink,  /* read link */
     virtiofs_symlink    /* symbolic link - returns error when called */
