@@ -7,5 +7,6 @@
 
 [manifest]
 /java.so: ./modules/java-isolated/java.so
-/java/runjava-isolated.jar: ${OSV_BASE}/modules/java-base/runjava-isolated/target/runjava-isolated.jar
+# JAR file no longer needed - minimal wrapper execs native java
+# /java/runjava-isolated.jar: ${OSV_BASE}/modules/java-base/runjava-isolated/target/runjava-isolated.jar
 /.java.policy: ${MODULE_DIR}/.java.policy
