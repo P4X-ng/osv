@@ -80,7 +80,7 @@ jobs:
           find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -o -name "*.py" -o -name "*.js" -o -name "*.ts" | \
             while read -r file; do
               if [ -f "$file" ]; then
-                lines=$(wc -l < "$file" 2>/dev/null || echo 0)
+                lines=$(wc -l < "$file" 2>/dev/null | tr -d '[:space:]' || echo 0)
                 if [ "$lines" -gt 500 ]; then
                   echo "⚠️ $file: $lines lines (consider splitting)" >> /tmp/quality-analysis.md
                 fi
