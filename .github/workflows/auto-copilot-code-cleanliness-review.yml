@@ -60,7 +60,7 @@ jobs:
               ! -path "*/build/*" \
               ! -path "*/.venv/*" \
               ! -path "*/vendor/*" \
-              -exec sh -c 'count=$(grep -c "$1" "$2" 2>/dev/null || echo 0); if [ "$count" -gt 20 ]; then echo "$count definitions in $2"; fi' _ "$pattern" {} \; \
+              -exec sh -c 'count=$(grep -c "$1" "$2" 2>/dev/null || echo 0); count=$(echo "$count" | head -n1 | tr -d '\''\\n'\'' | grep -E "^[0-9]+$" || echo 0); count=${count:-0}; if [[ "$count" =~ ^[0-9]+$ ]] && [ "$count" -gt 20 ]; then echo "$count definitions in $2"; fi' _ "$pattern" {} \; \
               2>/dev/null || true
           done | sort -rn >> /tmp/analysis.md
           
@@ -81,7 +81,10 @@ jobs:
             while read -r file; do
               if [ -f "$file" ]; then
                 lines=$(wc -l < "$file" 2>/dev/null || echo 0)
-                if [ "$lines" -gt 500 ]; then
+                # Ensure lines is numeric and handle potential issues
+                lines=$(echo "$lines" | head -n1 | tr -d '\n' | grep -E '^[0-9]+$' || echo 0)
+                lines=${lines:-0}
+                if [[ "$lines" =~ ^[0-9]+$ ]] && [ "$lines" -gt 500 ]; then
                   echo "⚠️ $file: $lines lines (consider splitting)" >> /tmp/quality-analysis.md
                 fi
               fi

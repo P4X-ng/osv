@@ -149,8 +149,16 @@ cmd.main = function(args)
   local do_help = opts.h
   local selected_method = opts.method and opts.method or "GET"
 
-  -- Load the schema
-  local schema = osv_schema()
+  -- Load the schema with error handling
+  local schema
+  local success, err = pcall(function()
+    schema = osv_schema()
+  end)
+  
+  if not success then
+    io.stderr:write("Error: ", err, "\n")
+    return
+  end
 
   -- Separate arguments and parameters
   local arguments = {} -- Real arguments
