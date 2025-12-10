@@ -6,6 +6,7 @@
  */
 
 #include <atomic>
+#include <errno.h>
 #include <memory>
 #include <mutex>
 #include <new>
@@ -172,13 +173,41 @@ static int virtiofs_sync(struct mount* mp)
 
 static int virtiofs_statfs(struct mount* mp, struct statfs* statp)
 {
-    // TODO: Call FUSE_STATFS
+    auto* m_data = static_cast<virtiofs_mount_data*>(mp->m_data);
+    if (!m_data || !m_data->drv) {
+        return EINVAL;
+    }
 
-    // Read only. 0 blocks free
-    statp->f_bfree = 0;
-    statp->f_bavail = 0;
+    std::unique_ptr<fuse_statfs_out> out_args {new (std::nothrow) fuse_statfs_out};
+    if (!out_args) {
+        return ENOMEM;
+    }
 
-    statp->f_ffree = 0;
+    auto result = fuse_req_send_and_receive_reply(m_data->drv, FUSE_STATFS, 
+        FUSE_ROOT_ID, nullptr, 0, out_args.get(), sizeof(*out_args));
+    
+    int error = result.second;
+    if (error) {
+        virtiofs_debug("FUSE_STATFS failed with error %d\n", error);
+        return error;
+    }
+
+    // Map FUSE statfs response to OSv statfs structure
+    statp->f_bsize = out_args->st.bsize;
+    statp->f_blocks = out_args->st.blocks;
+    statp->f_bfree = out_args->st.bfree;
+    statp->f_bavail = out_args->st.bavail;
+    statp->f_files = out_args->st.files;
+    statp->f_ffree = out_args->st.ffree;
+    statp->f_namelen = out_args->st.namelen;
+    
+    // Set filesystem ID from mount point
+    statp->f_fsid = mp->m_fsid;
+
+    virtiofs_debug("FUSE_STATFS: bsize=%u, blocks=%lld, bfree=%lld, bavail=%lld, "
+                   "files=%lld, ffree=%lld, namelen=%u\n",
+                   statp->f_bsize, statp->f_blocks, statp->f_bfree, 
+                   statp->f_bavail, statp->f_files, statp->f_ffree, statp->f_namelen);
 
     return 0;
 }
@@ -201,10 +230,10 @@ static int virtiofs_unmount(struct mount* mp, int flags)
 #define virtiofs_vget ((vfsop_vget_t)vfs_nullop)
 
 struct vfsops virtiofs_vfsops = {
-    virtiofs_mount,		/* mount */
-    virtiofs_unmount,	/* unmount */
-    virtiofs_sync,		/* sync */
+    virtiofs_mount,             /* mount */
+    virtiofs_unmount,   /* unmount */
+    virtiofs_sync,              /* sync */
     virtiofs_vget,      /* vget */
-    virtiofs_statfs,	/* statfs */
-    &virtiofs_vnops	    /* vnops */
+    virtiofs_statfs,    /* statfs */
+    &virtiofs_vnops         /* vnops */
 };
