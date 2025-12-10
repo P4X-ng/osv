@@ -1,5 +1,5 @@
-#ifndef	_SYS_SOCKET_H
-#define	_SYS_SOCKET_H
+#ifndef _SYS_SOCKET_H
+#define _SYS_SOCKET_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,9 +21,9 @@ extern "C" {
 
 struct ucred
 {
-	pid_t pid;
-	uid_t uid;
-	gid_t gid;
+        pid_t pid;
+        uid_t uid;
+        gid_t gid;
 };
 
 #define SHUT_RD 0
@@ -87,7 +87,8 @@ struct ucred
 #define PF_CAIF         37
 #define PF_ALG          38
 #define PF_NFC          39
-#define PF_MAX          40
+#define PF_VSOCK        40
+#define PF_MAX          41
 
 #define AF_UNSPEC       PF_UNSPEC
 #define AF_LOCAL        PF_LOCAL
@@ -130,6 +131,7 @@ struct ucred
 #define AF_CAIF         PF_CAIF
 #define AF_ALG          PF_ALG
 #define AF_NFC          PF_NFC
+#define AF_VSOCK        PF_VSOCK
 #define AF_MAX          PF_MAX
 
 #ifndef SO_DEBUG
@@ -237,15 +239,15 @@ struct ucred
 
 struct sockaddr
 {
-	sa_family_t sa_family;
-	char sa_data[14];
+        sa_family_t sa_family;
+        char sa_data[14];
 };
 
 struct sockaddr_storage
 {
-	sa_family_t ss_family;
-	unsigned long __ss_align;
-	char __ss_padding[128-2*sizeof(unsigned long)];
+        sa_family_t ss_family;
+        unsigned long __ss_align;
+        char __ss_padding[128-2*sizeof(unsigned long)];
 };
 
 int socket (int, int, int);

@@ -57,6 +57,7 @@ void net_init(void)
     OSV_DOMAIN_SET(inet);
     OSV_DOMAIN_SET(route);
     OSV_DOMAIN_SET(netlink);
+    OSV_DOMAIN_SET(vsock);
     rts_init();
     route_init();
     vnet_route_init();
