@@ -10,30 +10,8 @@
 #include <cstdio>
 #include <iterator>
 #include <unistd.h>
+#include <regex>
 #include <osv/debug.hh>
-
-//This is another hack to make sure none of the boost spirit headers
-//included do NOT include <iostream> which inflates the kernel
-//size by ~400K. Specifically we want to block pre-processing
-//of /usr/include/boost/phoenix/core/debug.hpp and /usr/include/boost/proto/debug.hpp
-//by defining their header guards.
-#define BOOST_PHOENIX_CORE_DEBUG_HPP 1
-#define BOOST_PROTO_DEBUG_HPP_EAN_12_31_2006 1
-
-#include <boost/config/warning_disable.hpp>
-//#include <boost/spirit/include/qi.hpp>
-//Include only select QI spirit headers to avoid implicitly
-//pulling std::locale
-#include <boost/spirit/include/qi_parse.hpp>
-#include <boost/spirit/include/qi_what.hpp>
-#include <boost/spirit/include/qi_action.hpp>
-#include <boost/spirit/include/qi_char.hpp>
-#include <boost/spirit/include/qi_directive.hpp>
-#include <boost/spirit/include/qi_rule.hpp>
-#include <boost/spirit/include/qi_grammar.hpp>
-#include <boost/spirit/include/qi_eoi.hpp>
-#include <boost/spirit/include/qi_operator.hpp>
-#include <boost/spirit/include/qi_string.hpp>
 
 #include <osv/power.hh>
 #include <osv/commands.hh>
@@ -44,75 +22,92 @@
 
 #include <osv/kernel_config_core_commands_runscript.h>
 
-namespace qi = boost::spirit::qi;
-namespace ascii = boost::spirit::ascii;
-using boost::spirit::ascii::space;
-
 namespace osv {
 
-typedef std::string::const_iterator sciter;
-
-struct command : qi::grammar<sciter,
-                             std::vector<std::string>(),
-                             ascii::space_type>
-{
-    command() : command::base_type(start)
-    {
-        using qi::lexeme;
-        using ascii::char_;
-        unesc_char.add("\\a", '\a')("\\b", '\b')("\\f", '\f')("\\n", '\n')
-                       ("\\r", '\r')("\\t", '\t')("\\v", '\v')("\\\\", '\\')
-                       ("\\\'", '\'')("\\\"", '\"');
-
-        string %= qi::no_skip[+(unesc_char | (char_ - ' ' - ';' - '&' - '!'))];
-        quoted_string %= lexeme['"' >> *(unesc_char | (char_ - '"')) >> '"'];
-
-        start %= ((quoted_string | string) % *space) >>
-                (char_(';') | qi::string("&!") | char_('&') | char_('!') | qi::eoi);
+// Helper function to process escape sequences in strings
+std::string process_escape_sequences(const std::string& input) {
+    std::string result;
+    result.reserve(input.size());
+    
+    for (size_t i = 0; i < input.size(); ++i) {
+        if (input[i] == '\\' && i + 1 < input.size()) {
+            switch (input[i + 1]) {
+                case 'a': result += '\a'; i++; break;
+                case 'b': result += '\b'; i++; break;
+                case 'f': result += '\f'; i++; break;
+                case 'n': result += '\n'; i++; break;
+                case 'r': result += '\r'; i++; break;
+                case 't': result += '\t'; i++; break;
+                case 'v': result += '\v'; i++; break;
+                case '\\': result += '\\'; i++; break;
+                case '\'': result += '\''; i++; break;
+                case '"': result += '"'; i++; break;
+                default: result += input[i]; break; // Keep backslash if not recognized
+            }
+        } else {
+            result += input[i];
+        }
     }
+    return result;
+}
 
-    qi::rule<sciter, std::string(), ascii::space_type> string;
-    qi::rule<sciter, std::string(), ascii::space_type> quoted_string;
-    qi::rule<sciter, std::vector<std::string>(), ascii::space_type> start;
-    qi::symbols<char const, char const> unesc_char;
-};
-
-struct commands : qi::grammar<sciter,
-                              std::vector<std::vector<std::string> >(),
-                              ascii::space_type>
-{
-    commands() : commands::base_type(start)
-    {
-        start %= cmd % *space;
+// New regex-based parser implementation
+std::vector<std::vector<std::string>>
+parse_command_line_regex(const std::string& line, bool& ok) {
+    std::vector<std::vector<std::string>> result;
+    ok = true;
+    
+    // Lines with only {blank char or ;} are ignored.
+    if (std::string::npos == line.find_first_not_of(" \f\n\r\t\v;")) {
+        return result;
     }
-
-    command cmd;
-    qi::rule<sciter,
-             std::vector<std::vector<std::string> >(),
-             ascii::space_type> start;
-};
+    
+    // Regex pattern to match: quoted strings, unquoted strings, and delimiters
+    // Pattern explanation:
+    // ("([^"\\]|\\.)*") - quoted strings (group 1, content in group 2)
+    // ([^\s;&!]+) - unquoted strings (group 3) 
+    // (&!|;|&|!) - command delimiters (group 4)
+    std::regex token_regex(R"(("([^"\\]|\\.)*")|([^\s;&!]+)|(&!|;|&|!))");
+    
+    std::vector<std::string> current_command;
+    std::sregex_iterator iter(line.begin(), line.end(), token_regex);
+    std::sregex_iterator end;
+    
+    for (; iter != end; ++iter) {
+        const std::smatch& match = *iter;
+        
+        if (match[1].matched) {
+            // Quoted string - remove quotes and process escape sequences
+            std::string quoted = match[1].str();
+            std::string content = quoted.substr(1, quoted.length() - 2); // Remove quotes
+            current_command.push_back(process_escape_sequences(content));
+        } else if (match[3].matched) {
+            // Unquoted string - process escape sequences
+            current_command.push_back(process_escape_sequences(match[3].str()));
+        } else if (match[4].matched) {
+            // Command delimiter - add it to current command and finish the command
+            if (!current_command.empty()) {
+                current_command.push_back(match[4].str());
+                result.push_back(current_command);
+                current_command.clear();
+            }
+        }
+    }
+    
+    // Add the last command if it exists
+    if (!current_command.empty()) {
+        // If no delimiter was found, add empty string as terminator
+        current_command.push_back("");
+        result.push_back(current_command);
+    }
+    
+    return result;
+}
 
 std::vector<std::vector<std::string> >
 parse_command_line_min(const std::string line, bool &ok)
 {
-    std::vector<std::vector<std::string> > result;
-
-    // Lines with only {blank char or ;} are ignored.
-    if (std::string::npos == line.find_first_not_of(" \f\n\r\t\v;")) {
-        ok = true;
-        return result;
-    }
-
-    commands g;
-    sciter iter = std::begin(line);
-    sciter end = std::end(line);
-    ok = phrase_parse(iter,
-                      end,
-                      g,
-                      space,
-                      result);
-
-    return result;
+    return parse_command_line_regex(line, ok);
 }
 
 /*

@@ -181,7 +181,10 @@ jobs:
               class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
               docstring_count=$(grep -c '"""' "$file" 2>/dev/null || echo 0)
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and clean of newlines
+              func_count=$(echo "$func_count" | tr -d '\n' | tr -d '\r')
+              class_count=$(echo "$class_count" | tr -d '\n' | tr -d '\r')
+              docstring_count=$(echo "$docstring_count" | tr -d '\n' | tr -d '\r')
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               docstring_count=${docstring_count:-0}
@@ -207,7 +210,10 @@ jobs:
               class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
               jsdoc_count=$(grep -c '/\*\*' "$file" 2>/dev/null || echo 0)
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and clean of newlines
+              func_count=$(echo "$func_count" | tr -d '\n' | tr -d '\r')
+              class_count=$(echo "$class_count" | tr -d '\n' | tr -d '\r')
+              jsdoc_count=$(echo "$jsdoc_count" | tr -d '\n' | tr -d '\r')
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               jsdoc_count=${jsdoc_count:-0}
