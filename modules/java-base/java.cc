@@ -11,6 +11,7 @@
 #include <string>
 #include <iostream>
 #include <cstring>
+#include <algorithm>
 #include <osv/mempool.hh>
 #include <osv/app.hh>
 
