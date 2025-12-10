@@ -176,19 +176,27 @@ jobs:
               ! -path "*/dist/*" \
               ! -name "__init__.py" \
               -type f | while read -r file; do
-              # Count functions and classes
-              func_count=$(grep -c "^def " "$file" 2>/dev/null || echo 0)
-              class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
-              docstring_count=$(grep -c '"""' "$file" 2>/dev/null || echo 0)
+              # Count functions and classes with proper error handling
+              func_count=$(grep -c "^def " "$file" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
+              class_count=$(grep -c "^class " "$file" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
+              docstring_count=$(grep -c '"""' "$file" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and clean
+              func_count=$(echo "$func_count" | grep -E '^[0-9]+$' || echo "0")
+              class_count=$(echo "$class_count" | grep -E '^[0-9]+$' || echo "0")
+              docstring_count=$(echo "$docstring_count" | grep -E '^[0-9]+$' || echo "0")
+              
+              # Set defaults if empty
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               docstring_count=${docstring_count:-0}
               
-              total=$((func_count + class_count))
-              if [ "$total" -gt 0 ] && [ "$docstring_count" -eq 0 ]; then
-                echo "⚠️ $file: $total definitions, no docstrings" >> /tmp/doc-analysis.md
+              # Validate that variables are single integers before arithmetic
+              if echo "$func_count" | grep -qE '^[0-9]+$' && echo "$class_count" | grep -qE '^[0-9]+$' && echo "$docstring_count" | grep -qE '^[0-9]+$'; then
+                total=$((func_count + class_count))
+                if [ "$total" -gt 0 ] && [ "$docstring_count" -eq 0 ]; then
+                  echo "⚠️ $file: $total definitions, no docstrings" >> /tmp/doc-analysis.md
+                fi
               fi
             done
           fi
@@ -202,19 +210,27 @@ jobs:
               ! -path "*/dist/*" \
               ! -path "*/build/*" \
               -type f | while read -r file; do
-              # Count functions and classes
-              func_count=$(grep -cE "(^function |^export function |^const .* = .*=>)" "$file" 2>/dev/null || echo 0)
-              class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
-              jsdoc_count=$(grep -c '/\*\*' "$file" 2>/dev/null || echo 0)
+              # Count functions and classes with proper error handling
+              func_count=$(grep -cE "(^function |^export function |^const .* = .*=>)" "$file" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
+              class_count=$(grep -c "^class " "$file" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
+              jsdoc_count=$(grep -c '/\*\*' "$file" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and clean
+              func_count=$(echo "$func_count" | grep -E '^[0-9]+$' || echo "0")
+              class_count=$(echo "$class_count" | grep -E '^[0-9]+$' || echo "0")
+              jsdoc_count=$(echo "$jsdoc_count" | grep -E '^[0-9]+$' || echo "0")
+              
+              # Set defaults if empty
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               jsdoc_count=${jsdoc_count:-0}
               
-              total=$((func_count + class_count))
-              if [ "$total" -gt 5 ] && [ "$jsdoc_count" -eq 0 ]; then
-                echo "⚠️ $file: ~$total definitions, no JSDoc comments" >> /tmp/doc-analysis.md
+              # Validate that variables are single integers before arithmetic
+              if echo "$func_count" | grep -qE '^[0-9]+$' && echo "$class_count" | grep -qE '^[0-9]+$' && echo "$jsdoc_count" | grep -qE '^[0-9]+$'; then
+                total=$((func_count + class_count))
+                if [ "$total" -gt 5 ] && [ "$jsdoc_count" -eq 0 ]; then
+                  echo "⚠️ $file: ~$total definitions, no JSDoc comments" >> /tmp/doc-analysis.md
+                fi
               fi
             done
           fi
@@ -234,17 +250,26 @@ jobs:
             echo "" >> /tmp/advanced-doc-review.md
             echo "#### C/C++ Documentation:" >> /tmp/advanced-doc-review.md
             
-            total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l)
-            documented_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -exec grep -l "/\*\*\|///" {} \; | wc -l)
+            total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l | tr -d '\n' | tr -d ' ')
+            documented_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -exec grep -l "/\*\*\|///" {} \; | wc -l | tr -d '\n' | tr -d ' ')
+            
+            # Ensure variables are numeric
+            total_files=$(echo "$total_files" | grep -E '^[0-9]+$' || echo "0")
+            documented_files=$(echo "$documented_files" | grep -E '^[0-9]+$' || echo "0")
+            total_files=${total_files:-0}
+            documented_files=${documented_files:-0}
             
             echo "- Total C/C++ files: $total_files" >> /tmp/advanced-doc-review.md
             echo "- Files with documentation: $documented_files" >> /tmp/advanced-doc-review.md
             
-            if [ $documented_files -eq 0 ] && [ $total_files -gt 0 ]; then
-              echo "⚠️ No C/C++ files contain documentation comments" >> /tmp/advanced-doc-review.md
-            elif [ $total_files -gt 0 ]; then
-              coverage=$((documented_files * 100 / total_files))
-              echo "✅ Documentation coverage: ${coverage}%" >> /tmp/advanced-doc-review.md
+            # Validate variables before arithmetic operations
+            if echo "$documented_files" | grep -qE '^[0-9]+$' && echo "$total_files" | grep -qE '^[0-9]+$'; then
+              if [ "$documented_files" -eq 0 ] && [ "$total_files" -gt 0 ]; then
+                echo "⚠️ No C/C++ files contain documentation comments" >> /tmp/advanced-doc-review.md
+              elif [ "$total_files" -gt 0 ]; then
+                coverage=$((documented_files * 100 / total_files))
+                echo "✅ Documentation coverage: ${coverage}%" >> /tmp/advanced-doc-review.md
+              fi
             fi
           fi
           
@@ -279,12 +304,20 @@ jobs:
           for doc in ARCHITECTURE.md DESIGN.md docs/architecture.md docs/design.md; do
             if [ -f "$doc" ]; then
               echo "✅ Found: $doc" >> /tmp/advanced-doc-review.md
-              arch_docs=$((arch_docs + 1))
+              # Ensure arch_docs is numeric before arithmetic
+              if echo "$arch_docs" | grep -qE '^[0-9]+$'; then
+                arch_docs=$((arch_docs + 1))
+              else
+                arch_docs=1
+              fi
             fi
           done
           
-          if [ $arch_docs -eq 0 ]; then
-            echo "⚠️ No architecture documentation found" >> /tmp/advanced-doc-review.md
+          # Validate arch_docs before comparison
+          if echo "$arch_docs" | grep -qE '^[0-9]+$'; then
+            if [ "$arch_docs" -eq 0 ]; then
+              echo "⚠️ No architecture documentation found" >> /tmp/advanced-doc-review.md
+            fi
           fi
           
           cat /tmp/advanced-doc-review.md

@@ -1,0 +1,193 @@
+# OSv makefile
+#
+# Copyright (C) 2015 Cloudius Systems, Ltd.
+# This work is open source software, licensed under the terms of the
+# BSD license as described in the LICENSE file in the top-level directory.
+
+# Delete the builtin make rules, as if "make -r" was used.
+.SUFFIXES:
+
+# Ask make to not delete "intermediate" results, such as the .o in the chain
+# .cc -> .o -> .so. Otherwise, during the first build, make considers the .o
+# to be intermediate, and deletes it, but the newly-created ".d" files lists
+# the ".o" as a target - so it needs to be created again on the second make.
+# See commit fac05c95 for a longer explanation.
+.SECONDARY:
+
+# Deleting partially-build targets on error should be the default, but it
+# isn't, for historical reasons, so we need to turn it on explicitly...
+.DELETE_ON_ERROR:
+###########################################################################
+# Backward-compatibility hack to support the old "make ... image=..." image
+# building syntax, and pass it into scripts/build. We should eventually drop
+# this support and turn the deprecated messages into errors.
+compat_args=$(if $(usrskel), usrskel=$(usrskel),)
+compat_args+=$(if $(fs), fs=$(fs),)
+ifdef image
+#$(error Please use scripts/build to build images)
+$(info "make image=..." deprecated. Please use "scripts/build image=...".)
+default_target:
+	./scripts/build image=$(image) $(compat_args)
+endif
+ifdef modules
+#$(error Please use scripts/build to build images)
+$(info "make modules=..." deprecated. Please use "scripts/build modules=...".)
+default_target:
+	./scripts/build modules=$(modules) $(compat_args)
+endif
+.PHONY: default_target
+
+###########################################################################
+
+include conf/base.mk
+
+# The build mode defaults to "release" (optimized build), the other option
+# is "debug" (unoptimized build). In the latter the optimizer interferes
+# less with the debugging, but the release build is fully debuggable too.
+mode=release
+ifeq (,$(wildcard conf/$(mode).mk))
+    $(error unsupported mode $(mode))
+endif
+include conf/$(mode).mk
+
+
+# By default, detect HOST_CXX's architecture - x64 or aarch64.
+# But also allow the user to specify a cross-compiled target architecture
+# by setting either "ARCH" or "arch" in the make command line, or the "ARCH"
+# environment variable.
+HOST_CXX := g++
+
+detect_arch = $(word 1, $(shell { echo "x64        __x86_64__";  \
+                                  echo "aarch64    __aarch64__"; \
+                                  echo "riscv64    __riscv"; \
+                       } | $1 -E -xc - | grep ' 1$$'))
+
+host_arch := $(call detect_arch, $(HOST_CXX))
+
+# As an alternative to setting ARCH or arch, let's allow the user to
+# directly set the CROSS_PREFIX environment variable, and learn its arch:
+ifdef CROSS_PREFIX
+    ARCH := $(call detect_arch, $(CROSS_PREFIX)gcc)
+endif
+
+ifndef ARCH
+    ARCH := $(host_arch)
+endif
+arch := $(ARCH)
+
+# ARCH_STR is like ARCH, but uses the full name x86_64 instead of x64
+ARCH_STR := $(arch:x64=x86_64)
+
+ifeq (,$(wildcard conf/$(arch).mk))
+    $(error unsupported architecture $(arch))
+endif
+include conf/$(arch).mk
+
+CROSS_PREFIX ?= $(if $(filter-out $(arch),$(host_arch)),$(arch)-linux-gnu-)
+CXX=$(CROSS_PREFIX)g++
+CC=$(CROSS_PREFIX)gcc
+LD=$(CROSS_PREFIX)ld.bfd
+export STRIP=$(CROSS_PREFIX)strip
+OBJCOPY=$(CROSS_PREFIX)objcopy
+
+# Our makefile puts all compilation results in a single directory, $(out),
+# instead of mixing them with the source code. This allows us to compile
+# different variants of the code - for different mode (release or debug)
+# or arch (x86 or aarch64) side by side. It also makes "make clean" very
+# simple, as all compilation results are in $(out) and can be removed in
+# one fell swoop.
+out = build/$(mode).$(arch)
+outlink = build/$(mode)
+outlink2 = build/last
+
+ifneq ($(MAKECMDGOALS),menuconfig)
+# Include the kernel configuration file if present, otherwise generate a default one
+ifeq (,$(wildcard $(out)/gen/config/kernel_conf.mk))
+    $(info Generating default kernel configuration file)
+    $(shell make -f conf/Makefile -j1 config 1>/dev/null)
+endif
+include $(out)/gen/config/kernel_conf.mk
+endif
+#
+# This parameter can be passed in to the build command to specify name of
+# a drivers profile. The drivers profile allows to build custom kernel with
+# a specific set of drivers enabled in the corresponding makefile include
+# file - conf/profiles/$(arch)/$(conf_drivers_profile).mk). The default profile is
+# 'all' which incorporates all drivers into kernel.
+# In general the profiles set variables named conf_drivers_*, which then in turn
+# are used in the rules below to decide which object files are linked into
+# kernel.
+conf_drivers_profile?=all
+ifeq (,$(wildcard conf/profiles/$(arch)/$(conf_drivers_profile).mk))
+    $(error unsupported drivers profile $(conf_drivers_profile))
+endif
+include conf/profiles/$(arch)/$(conf_drivers_profile).mk
+# The base profile disables all drivers unless they are explicitly enabled
+# by the profile file included in the line above. The base profile also enforces
+# certain dependencies between drivers, for example the ide driver needs pci support, etc.
+# For more details please read comments in the profile file.
+include conf/profiles/$(arch)/base.mk
+
+ifneq ($(MAKECMDGOALS),clean)
+$(info Building into $(out))
+endif
+
+###########################################################################
+
+# We need some external git modules to have been downloaded, because the
+# default "make" depends on the following directories:
+#   musl/ -  for some of the header files (symbolic links in include/api) and
+#            some of the source files ($(musl) below).
+#   external/x64/acpica - for the ACPICA library (see $(acpi) below).
+# Additional submodules are need when certain make parameters are used.
+ifeq (,$(wildcard musl/include))
+    $(error Missing musl/ directory. Please run "git submodule update --init --recursive")
+endif
+ifeq (,$(wildcard external/x64/acpica/source))
+    $(error Missing external/x64/acpica/ directory. Please run "git submodule update --init --recursive")
+endif
+
+# This makefile wraps all commands with the $(quiet) or $(very-quiet) macros
+# so that instead of half-a-screen-long command lines we short summaries
+# like "CC file.cc". These macros also keep the option of viewing the
+# full command lines, if you wish, with "make V=1".
+quiet = $(if $V, $1, @echo " $2"; $1)
+very-quiet = $(if $V, $1, @$1)
+
+ifeq ($(fs),zfs)
+all: $(out)/loader.img links $(out)/zfs_builder-stripped.elf
+ifeq ($(arch),x64)
+all: $(out)/vmlinuz.bin
+endif
+ifeq ($(arch),aarch64)
+all: $(out)/zfs_builder.img
+endif
+else
+all: $(out)/loader.img links
+ifeq ($(arch),x64)
+all: $(out)/vmlinuz.bin
+endif
+endif
+.PHONY: all
+
+menuconfig:
+	$(call quiet, make -s -f conf/Makefile default_config -j1, GEN default $(out)/.config)
+	make -s -f conf/Makefile menuconfig -j1
+
+links:
+	$(call very-quiet, ln -nsf $(notdir $(out)) $(outlink))
+	$(call very-quiet, ln -nsf $(notdir $(out)) $(outlink2))
+.PHONY: links
+
+check:
+	$(call quiet, pkill -e -9 qemu-system || true, Kill lingering QEMU process if any)
+	./scripts/build check
+.PHONY: check
+
+# Remember that "make clean" needs the same parameters that set $(out) in
+# the first place, so to clean the output of "make mode=debug" you need to
+# do "make mode=debug clean".
+clean:
+	rm -rf $(out)
+	rm -f $(outlink) $(outlink2)
+.PHONY: clean

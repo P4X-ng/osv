@@ -125,9 +125,10 @@ jobs:
             ! -path "*/.venv/*" \
             ! -path "*/dist/*" \
             ! -path "*/build/*" \
-            | wc -l > /tmp/file_count.txt
+            | wc -l | head -1 | tr -d '\n' | tr -d ' ' > /tmp/file_count.txt
           
-          FILE_COUNT=$(cat /tmp/file_count.txt)
+          FILE_COUNT=$(cat /tmp/file_count.txt | grep -E '^[0-9]+$' || echo "0")
+          FILE_COUNT=${FILE_COUNT:-0}
           echo "- Total source files analyzed: $FILE_COUNT" >> /tmp/amazonq-report.md
           echo "" >> /tmp/amazonq-report.md
           
