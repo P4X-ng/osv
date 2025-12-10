@@ -12,6 +12,7 @@
 #include <iostream>
 #include <cstring>
 #include <algorithm>
+#include <cerrno>
 #include <osv/mempool.hh>
 #include <osv/app.hh>
 
