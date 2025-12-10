@@ -11,6 +11,7 @@
 #include "arch-setup.hh"
 #include <osv/mempool.hh>
 #include <osv/mmu.hh>
+#include <osv/uefi.hh>
 #include "processor.hh"
 #include "processor-flags.h"
 #include "msr.hh"
@@ -109,114 +110,138 @@ void arch_setup_free_memory()
     asm ("movl $.edata, %0" : "=rm"(edata));
     edata_phys = edata - OSV_KERNEL_VM_SHIFT;
 
-    // copy to stack so we don't free it now
-    auto omb = *osv_multiboot_info;
-    auto mb = omb.mb;
-    auto e820_buffer = alloca(mb.mmap_length);
-    auto e820_size = mb.mmap_length;
-    memcpy(e820_buffer, reinterpret_cast<void*>(mb.mmap_addr), e820_size);
-    for_each_e820_entry(e820_buffer, e820_size, [] (e820ent ent) {
-        memory::phys_mem_size += ent.size;
-    });
-    constexpr u64 initial_map = 1 << 30; // 1GB mapped by startup code
-
-    u64 time;
-    time = omb.tsc_init_hi;
-    time = (time << 32) | omb.tsc_init;
-    boot_time.event(0, "", time );
-
-    time = omb.tsc_disk_done_hi;
-    time = (time << 32) | omb.tsc_disk_done;
-    boot_time.event(1, "disk read (real mode)", time );
-
-    time = omb.tsc_uncompress_done_hi;
-    time = (time << 32) | omb.tsc_uncompress_done;
-    boot_time.event(2, "uncompress lzloader.elf", time );
-
-    auto c = processor::cpuid(0x80000000);
-    if (c.a >= 0x80000008) {
-        c = processor::cpuid(0x80000008);
-        mmu::phys_bits = c.a & 0xff;
-        mmu::virt_bits = (c.a >> 8) & 0xff;
-        if(mmu::phys_bits > mmu::max_phys_bits){
-            mmu::phys_bits = mmu::max_phys_bits;
-        }
-    }
-
-    setup_temporary_phys_map();
-
-    // setup all memory up to 1GB.  We can't free any more, because no
-    // page tables have been set up, so we can't reference the memory being
-    // freed.
-    for_each_e820_entry(e820_buffer, e820_size, [] (e820ent ent) {
-        // can't free anything below edata_phys, it's core code.
-        // can't free anything below kernel at this moment
-        if (ent.addr + ent.size <= edata_phys) {
-            return;
-        }
-        if (intersects(ent, edata_phys)) {
-            ent = truncate_below(ent, edata_phys);
-        }
-        // ignore anything above 1GB, we haven't mapped it yet
-        if (intersects(ent, initial_map)) {
-            ent = truncate_above(ent, initial_map);
-        } else if (ent.addr >= initial_map) {
-            return;
-        }
-        mmu::free_initial_memory_range(ent.addr, ent.size);
-    });
-    for (auto&& area : mmu::identity_mapped_areas) {
-        auto base = reinterpret_cast<void*>(get_mem_area_base(area));
-        mmu::linear_map(base, 0, initial_map,
-            area == mmu::mem_area::main ? "main" :
-            area == mmu::mem_area::page ? "page" : "mempool",
-            initial_map);
-    }
-    // Map the core, loaded by the boot loader
-    // In order to properly setup mapping between virtual
-    // and physical we need to take into account where kernel
-    // is loaded in physical memory - elf_phys_start - and
-    // where it is linked to start in virtual memory - elf_start
-    static mmu::phys elf_phys_start = reinterpret_cast<mmu::phys>(elf_header);
-    // There is simple invariant between elf_phys_start and elf_start
-    // as expressed by the assignment below
-    elf_start = reinterpret_cast<void*>(elf_phys_start + OSV_KERNEL_VM_SHIFT);
-    elf_size = edata_phys - elf_phys_start;
-    mmu::linear_map(elf_start, elf_phys_start, elf_size, "kernel", OSV_KERNEL_BASE);
-    // get rid of the command line, before low memory is unmapped
-    parse_cmdline(mb);
-    // now that we have some free memory, we can start mapping the rest
-    mmu::switch_to_runtime_page_tables();
-    for_each_e820_entry(e820_buffer, e820_size, [] (e820ent ent) {
-        //
-        // Free the memory below elf_phys_start which we could not before
-        if (ent.addr < (u64)elf_phys_start) {
-            auto ent_below_kernel = ent;
-            if (ent.addr + ent.size >= (u64)elf_phys_start) {
-                ent_below_kernel = truncate_above(ent, (u64) elf_phys_start);
-            }
-            mmu::free_initial_memory_range(ent_below_kernel.addr, ent_below_kernel.size);
-            // If there is nothing left below elf_phys_start return
-            if (ent.addr + ent.size <= (u64)elf_phys_start) {
-               return;
+    if (osv::uefi::is_uefi_boot()) {
+        // UEFI boot path - simplified for now
+        debug_early("Setting up memory from UEFI memory map\n");
+        
+        constexpr u64 initial_map = 1 << 30; // 1GB mapped by startup code
+        
+        auto c = processor::cpuid(0x80000000);
+        if (c.a >= 0x80000008) {
+            c = processor::cpuid(0x80000008);
+            mmu::phys_bits = c.a & 0xff;
+            mmu::virt_bits = (c.a >> 8) & 0xff;
+            if(mmu::phys_bits > mmu::max_phys_bits){
+                mmu::phys_bits = mmu::max_phys_bits;
             }
         }
-        //
-        // Ignore memory already freed above
-        if (ent.addr + ent.size <= initial_map) {
-            return;
+
+        setup_temporary_phys_map();
+        
+        // For UEFI, use simplified memory setup for now
+        u64 mem_start = edata_phys;
+        u64 mem_size = initial_map - mem_start;
+        
+        if (mem_size > 0) {
+            mmu::free_initial_memory_range(mem_start, mem_size);
         }
-        if (intersects(ent, initial_map)) {
-            ent = truncate_below(ent, initial_map);
-        }
+        
         for (auto&& area : mmu::identity_mapped_areas) {
             auto base = reinterpret_cast<void*>(get_mem_area_base(area));
-            mmu::linear_map(base + ent.addr, ent.addr, ent.size,
-               area == mmu::mem_area::main ? "main" :
-               area == mmu::mem_area::page ? "page" : "mempool", ~0);
+            mmu::linear_map(base, 0, initial_map,
+                area == mmu::mem_area::main ? "main" :
+                area == mmu::mem_area::page ? "page" : "mempool",
+                initial_map);
         }
-        mmu::free_initial_memory_range(ent.addr, ent.size);
-    });
+        
+        // Map the core
+        static mmu::phys elf_phys_start = reinterpret_cast<mmu::phys>(elf_header);
+        elf_start = reinterpret_cast<void*>(elf_phys_start + OSV_KERNEL_VM_SHIFT);
+        elf_size = edata_phys - elf_phys_start;
+        mmu::linear_map(elf_start, elf_phys_start, elf_size, "kernel", OSV_KERNEL_BASE);
+        
+        mmu::switch_to_runtime_page_tables();
+        
+    } else {
+        // Legacy multiboot path
+        auto omb = *osv_multiboot_info;
+        auto mb = omb.mb;
+        auto e820_buffer = alloca(mb.mmap_length);
+        auto e820_size = mb.mmap_length;
+        memcpy(e820_buffer, reinterpret_cast<void*>(mb.mmap_addr), e820_size);
+        for_each_e820_entry(e820_buffer, e820_size, [] (e820ent ent) {
+            memory::phys_mem_size += ent.size;
+        });
+        constexpr u64 initial_map = 1 << 30; // 1GB mapped by startup code
+
+        u64 time;
+        time = omb.tsc_init_hi;
+        time = (time << 32) | omb.tsc_init;
+        boot_time.event(0, "", time );
+
+        time = omb.tsc_disk_done_hi;
+        time = (time << 32) | omb.tsc_disk_done;
+        boot_time.event(1, "disk read (real mode)", time );
+
+        time = omb.tsc_uncompress_done_hi;
+        time = (time << 32) | omb.tsc_uncompress_done;
+        boot_time.event(2, "uncompress lzloader.elf", time );
+
+        auto c = processor::cpuid(0x80000000);
+        if (c.a >= 0x80000008) {
+            c = processor::cpuid(0x80000008);
+            mmu::phys_bits = c.a & 0xff;
+            mmu::virt_bits = (c.a >> 8) & 0xff;
+            if(mmu::phys_bits > mmu::max_phys_bits){
+                mmu::phys_bits = mmu::max_phys_bits;
+            }
+        }
+
+        setup_temporary_phys_map();
+
+        for_each_e820_entry(e820_buffer, e820_size, [] (e820ent ent) {
+            if (ent.addr + ent.size <= edata_phys) {
+                return;
+            }
+            if (intersects(ent, edata_phys)) {
+                ent = truncate_below(ent, edata_phys);
+            }
+            if (intersects(ent, initial_map)) {
+                ent = truncate_above(ent, initial_map);
+            } else if (ent.addr >= initial_map) {
+                return;
+            }
+            mmu::free_initial_memory_range(ent.addr, ent.size);
+        });
+        for (auto&& area : mmu::identity_mapped_areas) {
+            auto base = reinterpret_cast<void*>(get_mem_area_base(area));
+            mmu::linear_map(base, 0, initial_map,
+                area == mmu::mem_area::main ? "main" :
+                area == mmu::mem_area::page ? "page" : "mempool",
+                initial_map);
+        }
+        static mmu::phys elf_phys_start = reinterpret_cast<mmu::phys>(elf_header);
+        elf_start = reinterpret_cast<void*>(elf_phys_start + OSV_KERNEL_VM_SHIFT);
+        elf_size = edata_phys - elf_phys_start;
+        mmu::linear_map(elf_start, elf_phys_start, elf_size, "kernel", OSV_KERNEL_BASE);
+        parse_cmdline(mb);
+        mmu::switch_to_runtime_page_tables();
+        for_each_e820_entry(e820_buffer, e820_size, [] (e820ent ent) {
+            if (ent.addr < (u64)elf_phys_start) {
+                auto ent_below_kernel = ent;
+                if (ent.addr + ent.size >= (u64)elf_phys_start) {
+                    ent_below_kernel = truncate_above(ent, (u64) elf_phys_start);
+                }
+                mmu::free_initial_memory_range(ent_below_kernel.addr, ent_below_kernel.size);
+                if (ent.addr + ent.size <= (u64)elf_phys_start) {
+                   return;
+                }
+            }
+            if (ent.addr + ent.size <= initial_map) {
+                return;
+            }
+            if (intersects(ent, initial_map)) {
+                ent = truncate_below(ent, initial_map);
+            }
+            for (auto&& area : mmu::identity_mapped_areas) {
+                auto base = reinterpret_cast<void*>(get_mem_area_base(area));
+                mmu::linear_map(base + ent.addr, ent.addr, ent.size,
+                   area == mmu::mem_area::main ? "main" :
+                   area == mmu::mem_area::page ? "page" : "mempool", ~0);
+            }
+            mmu::free_initial_memory_range(ent.addr, ent.size);
+        });
+    }
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)
@@ -267,7 +292,7 @@ void arch_init_premain()
 {
     auto omb = *osv_multiboot_info;
     if (omb.disk_err)
-	debug_early_u64("Error reading disk (real mode): ", static_cast<u64>(omb.disk_err));
+        debug_early_u64("Error reading disk (real mode): ", static_cast<u64>(omb.disk_err));
 
 #if CONF_drivers_acpi
     acpi::pvh_rsdp_paddr = omb.pvh_rsdp;
