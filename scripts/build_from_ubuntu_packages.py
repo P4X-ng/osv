@@ -121,7 +121,7 @@ class UbuntuPackageBuilder:
     def _is_blacklisted(self, package):
         """Check if package is blacklisted"""
         for pattern in self.blacklist:
-            if re.match(pattern, package):
+            if re.search(pattern, package):
                 return True
         return False
     
@@ -160,7 +160,8 @@ class UbuntuPackageBuilder:
                     print(f"    Warning: Could not find downloaded file for {pkg}")
                     
             except subprocess.CalledProcessError as e:
-                print(f"    Warning: Could not download {pkg}: {e.stderr}")
+                error_msg = e.stderr if e.stderr else 'Unknown error'
+                print(f"    Warning: Could not download {pkg}: {error_msg}")
                 continue
         
         return downloaded_files
@@ -220,11 +221,19 @@ class UbuntuPackageBuilder:
     
     def _remove_empty_dirs(self, path):
         """Recursively remove empty directories"""
-        for item in path.iterdir():
-            if item.is_dir():
-                self._remove_empty_dirs(item)
-                if not any(item.iterdir()):
-                    item.rmdir()
+        try:
+            for item in path.iterdir():
+                if item.is_dir():
+                    self._remove_empty_dirs(item)
+                    try:
+                        if not any(item.iterdir()):
+                            item.rmdir()
+                    except FileNotFoundError:
+                        # Directory already removed by another recursion
+                        pass
+        except FileNotFoundError:
+            # Path was removed during recursion
+            pass
     
     def _generate_manifest(self):
         """Generate OSv manifest file"""
@@ -248,8 +257,8 @@ class UbuntuPackageBuilder:
                     # Host path relative to module directory using ${MODULE_DIR} variable
                     # This makes the manifest portable across different machines
                     host_path_rel = Path('extracted') / rel_path
-                    # Use raw string to avoid Python interpreting ${MODULE_DIR}
-                    host_path = '$' + '{MODULE_DIR}/' + str(host_path_rel)
+                    # Use f-string with escaped braces for MODULE_DIR variable
+                    host_path = f'${{MODULE_DIR}}/{host_path_rel}'
                     
                     # Manifest format: guest_path: host_path
                     f.write(f'{guest_path}: {host_path}\n')

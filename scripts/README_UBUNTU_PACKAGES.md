@@ -217,4 +217,5 @@ The generated module can be used just like any other OSv app:
 - Downloaded .deb files are cached in the `downloads/` directory for faster subsequent runs
 - The script works on any Linux distribution, not just Ubuntu (as long as apt tools are available)
 - PIE (Position Independent Executable) binaries from Ubuntu packages work well on OSv
-- The manifest uses absolute paths to the extracted files, so don't move the output directory after generation
+- The manifest uses relative paths with `${MODULE_DIR}` variable, making them portable across machines
+- You must run the script to populate the `extracted/` directory before building an image
