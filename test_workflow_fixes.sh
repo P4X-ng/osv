@@ -3,9 +3,10 @@
 
 echo "Testing the fixed shell script logic..."
 
-# Simulate the problematic scenarios that were causing CI failures
+# Create a test Python file
 test_file="/tmp/test_file.py"
-echo 'def function1():
+cat > "$test_file" << 'EOF'
+def function1():
     pass
 
 class TestClass:
@@ -13,7 +14,8 @@ class TestClass:
     pass
 
 def function2():
-    pass' > "$test_file"
+    pass
+EOF
 
 echo "Testing Python file analysis..."
 
@@ -42,7 +44,8 @@ fi
 
 # Test JavaScript logic
 test_js_file="/tmp/test_file.js"
-echo 'function testFunc() {
+cat > "$test_js_file" << 'EOF'
+function testFunc() {
     return true;
 }
 
@@ -52,7 +55,8 @@ class TestClass {
 
 const arrowFunc = () => {
     return false;
-}' > "$test_js_file"
+}
+EOF
 
 echo ""
 echo "Testing JavaScript file analysis..."

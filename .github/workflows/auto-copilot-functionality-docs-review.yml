@@ -234,8 +234,12 @@ jobs:
             echo "" >> /tmp/advanced-doc-review.md
             echo "#### C/C++ Documentation:" >> /tmp/advanced-doc-review.md
             
-            total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l)
-            documented_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -exec grep -l "/\*\*\|///" {} \; | wc -l)
+            total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l | head -1 | tr -d '\n\r' || echo 0)
+            documented_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -exec grep -l "/\*\*\|///" {} \; | wc -l | head -1 | tr -d '\n\r' || echo 0)
+            
+            # Ensure variables are numeric and sanitize
+            total_files=$(echo "${total_files:-0}" | grep -E '^[0-9]+$' || echo 0)
+            documented_files=$(echo "${documented_files:-0}" | grep -E '^[0-9]+$' || echo 0)
             
             echo "- Total C/C++ files: $total_files" >> /tmp/advanced-doc-review.md
             echo "- Files with documentation: $documented_files" >> /tmp/advanced-doc-review.md

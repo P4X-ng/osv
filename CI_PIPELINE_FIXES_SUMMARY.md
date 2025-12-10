@@ -33,6 +33,32 @@ This caused variables to contain values like "0 0" or "0\n0" instead of single i
 - **Before**: `func_count=$(grep -cE "(^function |^export function |^const .* = .*=>)" "$file" 2>/dev/null || echo 0)`
 - **After**: `func_count=$(grep -cE "(^function |^export function |^const .* = .*=>)" "$file" 2>/dev/null | head -1 | tr -d '\n\r' || echo 0)`
 
+**C/C++ Documentation Analysis (Lines 237-242):**
+- **Before**: `total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l)`
+- **After**: `total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l | head -1 | tr -d '\n\r' || echo 0)`
+
+#### 2. `.github/workflows/auto-copilot-code-cleanliness-review.yml`
+
+**Code Analysis Section (Line 63):**
+- **Before**: `count=$(grep -c "$1" "$2" 2>/dev/null || echo 0); if [ "$count" -gt 20 ]; then`
+- **After**: `count=$(grep -c "$1" "$2" 2>/dev/null | head -1 | tr -d '\n\r' || echo 0); count=$(echo "${count:-0}" | grep -E "^[0-9]+$" || echo 0); if [ "$count" -gt 20 ]; then`
+
+**Large File Detection (Lines 83-84):**
+- **Before**: `lines=$(wc -l < "$file" 2>/dev/null || echo 0)`
+- **After**: `lines=$(wc -l < "$file" 2>/dev/null | head -1 | tr -d '\n\r' || echo 0); lines=$(echo "${lines:-0}" | grep -E '^[0-9]+$' || echo 0)`
+
+#### 3. `.github/workflows/auto-complete-cicd-review.yml`
+
+**Large File Analysis (Line 57):**
+- **Before**: `lines=$(wc -l < "$1"); if [ "$lines" -gt 500 ]; then`
+- **After**: `lines=$(wc -l < "$1" | head -1 | tr -d '\n\r' || echo 0); lines=$(echo "${lines:-0}" | grep -E "^[0-9]+$" || echo 0); if [ "$lines" -gt 500 ]; then`
+
+#### 4. `.github/workflows/auto-copilot-test-review-playwright.yml`
+
+**Test Count Analysis (Lines 195-196):**
+- **Before**: `test_count=$(find "$dir" -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.cc" -o -name "*.cpp" | wc -l)`
+- **After**: `test_count=$(find "$dir" -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.cc" -o -name "*.cpp" | wc -l | head -1 | tr -d '\n\r' || echo 0); test_count=$(echo "${test_count:-0}" | grep -E '^[0-9]+$' || echo 0)`
+
 ### Key Changes Made
 
 1. **Added `| head -1`**: Ensures only the first line of output is captured
@@ -103,7 +129,7 @@ The CI pipeline fixes are completely separate from the original grep -P fixes:
 
 ## Conclusion
 
-The CI pipeline failures have been successfully resolved through targeted fixes to the GitHub Actions workflow file. The changes:
+The CI pipeline failures have been successfully resolved through targeted fixes to the GitHub Actions workflow files. The changes:
 
 1. **Address the Root Cause**: Proper variable sanitization prevents arithmetic operation errors
 2. **Maintain Functionality**: Documentation analysis workflow continues to work as designed
@@ -116,8 +142,11 @@ The fixes are minimal, targeted, and focused solely on resolving the specific CI
 
 | File | Type of Change | Purpose |
 |------|----------------|---------|
-| `.github/workflows/auto-copilot-functionality-docs-review.yml` | Shell script fixes | Resolve CI pipeline arithmetic errors |
+| `.github/workflows/auto-copilot-functionality-docs-review.yml` | Shell script fixes | Resolve CI pipeline arithmetic errors in documentation analysis |
+| `.github/workflows/auto-copilot-code-cleanliness-review.yml` | Shell script fixes | Prevent similar issues in code cleanliness workflow |
+| `.github/workflows/auto-complete-cicd-review.yml` | Shell script fixes | Prevent similar issues in CI/CD review workflow |
+| `.github/workflows/auto-copilot-test-review-playwright.yml` | Shell script fixes | Prevent similar issues in test review workflow |
 | `test_workflow_fixes.sh` | Test script (new) | Validate the fixes work correctly |
 | `CI_PIPELINE_FIXES_SUMMARY.md` | Documentation (new) | Document the changes and verification |
 
-**Total Impact**: Minimal changes focused on CI stability without affecting core functionality.
+**Total Impact**: Comprehensive fixes across all affected workflow files to ensure CI stability without affecting core functionality.

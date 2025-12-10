@@ -192,7 +192,8 @@ jobs:
           
           for dir in tests test __tests__ spec e2e; do
             if [ -d "$dir" ]; then
-              test_count=$(find "$dir" -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.cc" -o -name "*.cpp" | wc -l)
+              test_count=$(find "$dir" -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.cc" -o -name "*.cpp" | wc -l | head -1 | tr -d '\n\r' || echo 0)
+              test_count=$(echo "${test_count:-0}" | grep -E '^[0-9]+$' || echo 0)
               echo "✅ Found $dir/ directory with $test_count test files" >> /tmp/coverage-analysis.md
             fi
           done
