@@ -22,8 +22,8 @@ void test_packet_checksum() {
     
     // Expected checksum for "qSupported"
     // q=0x71, S=0x53, u=0x75, p=0x70, p=0x70, o=0x6f, r=0x72, t=0x74, e=0x65, d=0x64
-    // Sum = 0x71+0x53+0x75+0x70+0x70+0x6f+0x72+0x74+0x65+0x64 = 0x467 = 0x67 (mod 256)
-    assert(checksum == 0x67);
+    // Sum = 0x71+0x53+0x75+0x70+0x70+0x6f+0x72+0x74+0x65+0x64 = 0x437 = 0x37 (mod 256)
+    assert(checksum == 0x37);
     
     std::cout << "PASSED\n";
 }
@@ -34,8 +34,8 @@ void test_packet_format() {
     Packet packet("qSupported");
     std::string formatted = packet.format();
     
-    // Should be: $qSupported#67
-    assert(formatted == "$qSupported#67");
+    // Should be: $qSupported#37
+    assert(formatted == "$qSupported#37");
     
     std::cout << "PASSED\n";
 }
@@ -44,7 +44,7 @@ void test_packet_parse() {
     std::cout << "Testing packet parsing... ";
     
     Packet packet;
-    bool result = packet.parse("$qSupported#67");
+    bool result = packet.parse("$qSupported#37");
     
     assert(result == true);
     assert(packet.data() == "qSupported");
