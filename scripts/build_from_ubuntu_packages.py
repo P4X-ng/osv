@@ -245,8 +245,14 @@ class UbuntuPackageBuilder:
                     # Guest path is the relative path with leading /
                     guest_path = '/' + str(rel_path)
                     
+                    # Host path relative to module directory using ${MODULE_DIR} variable
+                    # This makes the manifest portable across different machines
+                    host_path_rel = Path('extracted') / rel_path
+                    # Use raw string to avoid Python interpreting ${MODULE_DIR}
+                    host_path = '$' + '{MODULE_DIR}/' + str(host_path_rel)
+                    
                     # Manifest format: guest_path: host_path
-                    f.write(f'{guest_path}: {src_path}\n')
+                    f.write(f'{guest_path}: {host_path}\n')
         
         return manifest_path
     
