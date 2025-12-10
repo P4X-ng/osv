@@ -84,6 +84,12 @@ rwlock::~rwlock()
 
 bool rwlock::try_rlock()
 {
+    //Check if current thread already holds the write lock - if so, allow immediate read access
+    //since write lock implies read capability
+    if (_readers.load(std::memory_order_acquire) & WRITER_LOCK && _wmtx.owned()) {
+        return true;
+    }
+
     //If there is no writer lock or pending writer, try to acquire the lock for reading
     //by adding READER_LOCK_INC to the _readers atomically
     unsigned prev_readers = _readers.load(std::memory_order_acquire);
@@ -98,6 +104,12 @@ bool rwlock::try_rlock()
 
 void rwlock::rlock()
 {
+    //Check if current thread already holds the write lock - if so, allow immediate read access
+    //since write lock implies read capability
+    if (_readers.load(std::memory_order_acquire) & WRITER_LOCK && _wmtx.owned()) {
+        return;
+    }
+
     //Try to acquire a lock for reading by adding READER_LOCK_INC to the _readers atomically
     //The loop will stop once a new writer enters wlock() past the _wmtx.lock()
     //and sets PENDING_WRITER, or writer has already locked it before, so
@@ -140,6 +152,12 @@ void rwlock::rlock()
 
 void rwlock::runlock()
 {
+    //Check if current thread holds the write lock - if so, this is a no-op
+    //since the read access was granted without incrementing the reader count
+    if (_readers.load(std::memory_order_acquire) & WRITER_LOCK && _wmtx.owned()) {
+        return;
+    }
+
     //Release the lock for reading by subtracting READER_LOCK_INC atomically
     unsigned prev_readers = _readers.fetch_add(-READER_LOCK_INC, std::memory_order_acq_rel);
 
