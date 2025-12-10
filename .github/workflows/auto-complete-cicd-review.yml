@@ -165,6 +165,9 @@ jobs:
           for doc in README.md CONTRIBUTING.md LICENSE.md CHANGELOG.md CODE_OF_CONDUCT.md SECURITY.md; do
             if [ -f "$doc" ]; then
               word_count=$(wc -w < "$doc" 2>/dev/null || echo 0)
+              # Ensure word_count is numeric and handle potential issues
+              word_count=$(echo "$word_count" | head -n1 | tr -d '\n' | grep -E '^[0-9]+$' || echo 0)
+              word_count=${word_count:-0}
               echo "✅ $doc ($word_count words)" >> /tmp/review-results/documentation.md
             else
               echo "❌ $doc (missing)" >> /tmp/review-results/documentation.md
@@ -369,7 +372,8 @@ jobs:
             const recentIssue = issues.data.find(issue => {
               const createdAt = new Date(issue.created_at);
               const hoursSinceCreation = (Date.now() - createdAt) / (1000 * 60 * 60);
-              return hoursSinceCreation < 24;
+              // Ensure we have a valid number before comparison
+              return !isNaN(hoursSinceCreation) && hoursSinceCreation < 24;
             });
             
             if (recentIssue) {
