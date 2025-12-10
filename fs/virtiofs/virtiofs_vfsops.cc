@@ -172,12 +172,30 @@ static int virtiofs_sync(struct mount* mp)
 
 static int virtiofs_statfs(struct mount* mp, struct statfs* statp)
 {
-    // TODO: Call FUSE_STATFS
+    auto* m_data = static_cast<virtiofs_mount_data*>(mp->m_data);
+    
+    std::unique_ptr<fuse_statfs_out> out_args {new (std::nothrow) fuse_statfs_out};
+    if (!out_args) {
+        return ENOMEM;
+    }
 
-    // Read only. 0 blocks free
+    auto result = fuse_req_send_and_receive_reply(m_data->drv, FUSE_STATFS,
+        FUSE_ROOT_ID, nullptr, 0, out_args.get(), sizeof(*out_args));
+    
+    if (result.second) {
+        virtiofs_debug("statfs failed with error: %d\n", result.second);
+        return result.second;
+    }
+
+    // Map FUSE statfs results to OSv statfs structure
+    statp->f_bsize = out_args->st.bsize;
+    statp->f_blocks = out_args->st.blocks;
+    statp->f_files = out_args->st.files;
+    statp->f_namelen = out_args->st.namelen;
+    
+    // Read only filesystem - 0 blocks and inodes free
     statp->f_bfree = 0;
     statp->f_bavail = 0;
-
     statp->f_ffree = 0;
 
     return 0;
