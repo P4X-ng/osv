@@ -23,8 +23,12 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <sys/stat.h>
 #include <osv/mempool.hh>
+
+// Declare environ for execve
+extern char **environ;
 
 // Possible locations for the native java binary
 #ifdef __aarch64__
@@ -65,6 +69,14 @@ static std::string calculate_xmx() {
     // Calculate a reasonable heap size based on available memory
     // Use a conservative approach: use up to 75% of free memory
     size_t free_mem = memory::stats::free();
+    
+    // Sanity check - if free memory seems unreasonable, use a default
+    if (free_mem == 0 || free_mem > (1ULL << 40)) {  // 0 or > 1TB seems wrong
+        std::cerr << "java.so: WARNING: Unexpected free memory value: " << free_mem 
+                  << " bytes, using default 512MB\n";
+        return "-Xmx512M";
+    }
+    
     size_t xmx_bytes = (free_mem * 3) / 4;
     
     // Minimum heap: 32MB
@@ -75,7 +87,10 @@ static std::string calculate_xmx() {
     // Convert to MB for readability
     size_t xmx_mb = xmx_bytes / (1024 * 1024);
     
-    std::string xmx_arg = "-Xmx" + std::to_string(xmx_mb) + "M";
+    std::ostringstream oss;
+    oss << "-Xmx" << xmx_mb << "M";
+    std::string xmx_arg = oss.str();
+    
     std::cout << "java.so: Auto-calculated heap size: " << xmx_arg << std::endl;
     return xmx_arg;
 }
@@ -92,18 +107,28 @@ static int java_main(int argc, char** argv) {
     std::cout << "java.so: Using native Java launcher at: " << java_path << std::endl;
     
     // Build the argument list for execve
+    // Store strings we create so their memory remains valid
     std::vector<std::string> args_storage;
-    std::vector<char*> exec_args;
-    exec_args.push_back(const_cast<char*>(java_path));
+    args_storage.push_back(java_path);
     
     // Optionally add -Xmx if not already specified
     bool should_add_xmx = !has_heap_option(argc, argv);
     if (should_add_xmx) {
         args_storage.push_back(calculate_xmx());
-        exec_args.push_back(const_cast<char*>(args_storage.back().c_str()));
     }
     
-    // Pass through all arguments from argv[1] onwards
+    // Build array of char* pointers for execve
+    // Note: execve signature requires char* (not const char*) even though it doesn't modify them
+    // This is a POSIX API quirk, so const_cast is safe and necessary here
+    std::vector<char*> exec_args;
+    
+    exec_args.push_back(const_cast<char*>(args_storage[0].c_str()));
+    
+    if (should_add_xmx) {
+        exec_args.push_back(const_cast<char*>(args_storage[1].c_str()));
+    }
+    
+    // Pass through all arguments from argv[1] onwards (already char*)
     for (int i = 1; i < argc; i++) {
         exec_args.push_back(argv[i]);
     }
