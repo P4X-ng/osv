@@ -54,10 +54,21 @@ function osv_schema()
     for _, resource in ipairs(schm.apis) do
       local api_def_url = "/api/listings/" .. resource.path .. ".json"
       resource.definition = osv_request(api_def_url, "GET")
-      resource.cli_alias = string.sub(resource.definition.resourcePath, 2)
+      
+      -- Defensive check: ensure resourcePath exists before calling string.sub
+      if resource.definition and resource.definition.resourcePath then
+        resource.cli_alias = string.sub(resource.definition.resourcePath, 2)
+      else
+        resource.cli_alias = resource.path or "unknown"
+      end
 
-      for _, api in ipairs(resource.definition.apis) do
-        api.cli_alias = split(string.sub(api.path, 2), "[^/]+")
+      for _, api in ipairs(resource.definition.apis or {}) do
+        -- Defensive check: ensure api.path exists before calling string.sub
+        if api.path then
+          api.cli_alias = split(string.sub(api.path, 2), "[^/]+")
+        else
+          api.cli_alias = {"unknown"}
+        end
       end
     end
 
@@ -143,6 +154,11 @@ local ssl_keys = {
 --                       response itself if processed.
 function osv_request(arguments, method, parameters, do_raw)
   local raw = do_raw or false
+
+  -- Check if API endpoint is configured
+  if not context.api then
+    error("OSv API endpoint not configured. Please set OSV_API environment variable or use --api option.\nExample: export OSV_API=http://192.168.122.76:8000")
+  end
 
   -- Some preliminary checks
   local is_https = string.sub(context.api, 1, 5) == "https"
