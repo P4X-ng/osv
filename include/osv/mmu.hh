@@ -171,6 +171,12 @@ public:
     // variable so don't risk breaking any mmu core code that relies on the derived size()
     // being the same.
     uintptr_t real_size() const { return _real_size; }
+    
+    // Deferred deletion support to avoid deadlock during fault handling
+    void mark_for_deferred_deletion();
+    bool is_marked_for_deletion() const { return _marked_for_deletion; }
+    static void process_deferred_deletions();
+    
     friend ulong map_jvm(unsigned char* jvm_addr, size_t size, size_t align, balloon_ptr b);
 protected:
     balloon_ptr _balloon;
@@ -183,6 +189,7 @@ private:
     unsigned _real_perm;
     unsigned _real_flags;
     uintptr_t _real_size;
+    bool _marked_for_deletion = false;
 };
 #endif
 
