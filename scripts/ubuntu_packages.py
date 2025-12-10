@@ -152,7 +152,7 @@ class UbuntuPackageHandler:
             if line.startswith('Depends:'):
                 dep = line.split(':', 1)[1].strip()
                 # Remove version constraints and alternatives
-                dep = re.sub(r'\s*\([^)]*\)', '', dep)
+                dep = re.sub(r'\\s*\\([^)]*\\)', '', dep)
                 dep = dep.split('|')[0].strip()  # Take first alternative
                 if dep and not dep.startswith('<') and not dep.startswith('|'):
                     deps.append(dep)
@@ -207,7 +207,7 @@ class UbuntuPackageHandler:
                 content = response.read().decode('utf-8')
                 
                 # Look for .deb files matching our architecture
-                pattern = rf'href="([^"]*{package_name}[^"]*_{self.arch}\.deb)"'
+                pattern = rf'href="([^"]*{package_name}[^"]*_{self.arch}\\.deb)"'
                 matches = re.findall(pattern, content)
                 
                 if matches:
@@ -332,7 +332,7 @@ class UbuntuPackageHandler:
                     else:
                         osv_path = prefix + '/' + str(rel_path)
                     
-                    manifest.write(f"{osv_path}: {file_path}\n")
+                    manifest.write(f"{osv_path}: {file_path}\\n")
     
     def process_packages(self, packages: List[str], output_dir: Path, 
                         resolve_deps: bool = True, blacklist: Set[str] = None,
