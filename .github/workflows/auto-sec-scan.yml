@@ -8,9 +8,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@main
-      - name: Run CodeQL Scan
+        with:
+          submodules: recursive
+      - name: Initialize CodeQL
         uses: github/codeql-action/init@main
         with:
-          languages: 'cpp,python,java'
+          languages: cpp,python,java
+          build-mode: none
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@main
