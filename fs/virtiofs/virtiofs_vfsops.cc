@@ -204,8 +204,8 @@ static int virtiofs_statfs(struct mount* mp, struct statfs* statp)
     // Set filesystem ID from mount point
     statp->f_fsid = mp->m_fsid;
 
-    virtiofs_debug("FUSE_STATFS: bsize=%u, blocks=%lu, bfree=%lu, bavail=%lu, "
-                   "files=%lu, ffree=%lu, namelen=%u\n",
+    virtiofs_debug("FUSE_STATFS: bsize=%u, blocks=%lld, bfree=%lld, bavail=%lld, "
+                   "files=%lld, ffree=%lld, namelen=%u\n",
                    statp->f_bsize, statp->f_blocks, statp->f_bfree, 
                    statp->f_bavail, statp->f_files, statp->f_ffree, statp->f_namelen);
 
