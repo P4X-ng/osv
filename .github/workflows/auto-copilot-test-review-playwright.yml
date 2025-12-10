@@ -33,8 +33,15 @@ jobs:
             echo "is_web_project=true" >> $GITHUB_OUTPUT
             echo "Project type: Web/JavaScript project - Playwright applicable"
           elif [ -f "Makefile" ] && ! [ -f "package.json" ]; then
-            echo "is_web_project=false" >> $GITHUB_OUTPUT
-            echo "Project type: C/C++/Systems project - Playwright not applicable"
+            # Additional checks for C/C++/systems projects
+            if [ -f "CMakeLists.txt" ] || [ -f "configure" ] || [ -f "configure.ac" ] || \
+               find . -maxdepth 3 -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" 2>/dev/null | head -1 | grep -q .; then
+              echo "is_web_project=false" >> $GITHUB_OUTPUT
+              echo "Project type: C/C++/Systems project - Playwright not applicable"
+            else
+              echo "is_web_project=maybe" >> $GITHUB_OUTPUT
+              echo "Project type: Make-based but unclear - will attempt Playwright tests"
+            fi
           else
             echo "is_web_project=maybe" >> $GITHUB_OUTPUT
             echo "Project type: Unknown - will attempt Playwright tests"
@@ -187,9 +194,13 @@ jobs:
           # Detect project type
           echo "### Project Type Detection:" >> /tmp/coverage-analysis.md
           if [ -f "Makefile" ] && ! [ -f "package.json" ]; then
-            echo "📦 **Project Type**: C/C++/Systems Programming Project" >> /tmp/coverage-analysis.md
-            echo "ℹ️ Playwright testing is not applicable for this project type" >> /tmp/coverage-analysis.md
-            echo "" >> /tmp/coverage-analysis.md
+            # Additional checks for C/C++/systems projects
+            if [ -f "CMakeLists.txt" ] || [ -f "configure" ] || [ -f "configure.ac" ] || \
+               find . -maxdepth 3 -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" 2>/dev/null | head -1 | grep -q .; then
+              echo "📦 **Project Type**: C/C++/Systems Programming Project" >> /tmp/coverage-analysis.md
+              echo "ℹ️ Playwright testing is not applicable for this project type" >> /tmp/coverage-analysis.md
+              echo "" >> /tmp/coverage-analysis.md
+            fi
           elif [ -f "package.json" ]; then
             echo "📦 **Project Type**: JavaScript/TypeScript/Web Project" >> /tmp/coverage-analysis.md
             echo "" >> /tmp/coverage-analysis.md
