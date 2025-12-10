@@ -47,11 +47,31 @@ and http://osv.io/.
 ## Building and Running Apps on OSv
 
 To run an application on OSv, one needs to build an image by fusing the OSv kernel, and
-the application files together. This, at a high level, can be achieved in two ways, either:
-- by using the shell script located at `./scripts/build`
- that builds the kernel from sources and fuses it with application files, or
-- by using the [capstan tool](https://github.com/cloudius-systems/capstan) that uses *pre-built
- kernel* and combines it with application files to produce a final image.
+the application files together. This, at a high level, can be achieved in several ways:
+
+- **Using Ubuntu packages**: Create OSv images directly from Ubuntu packages using the new
+  Ubuntu package system (see [Ubuntu Packages Documentation](documentation/UBUNTU_PACKAGES.md))
+- **Using the build script**: Use `./scripts/build` that builds the kernel from sources 
+  and fuses it with application files
+- **Using Capstan**: Use the [capstan tool](https://github.com/cloudius-systems/capstan) 
+  that uses *pre-built kernel* and combines it with application files to produce a final image
+
+### Quick Start with Ubuntu Packages
+
+The easiest way to create an OSv image is using Ubuntu packages:
+
+```bash
+# Create a new module with curl
+./scripts/create_ubuntu_module.py --name curl-app --packages curl --cmdline "/usr/bin/curl --help"
+
+# Build and run the image
+./scripts/build image=curl-app
+./scripts/run.py
+```
+
+For more details, see the [Ubuntu Packages Documentation](documentation/UBUNTU_PACKAGES.md).
+
+### Using Capstan
 
 If you intend to try to run your app on OSv with the least effort possible, you should pursue the *capstan*
 route. For introduction please read this 
@@ -61,6 +81,8 @@ this more detailed [documentation](https://github.com/cloudius-systems/capstan#d
 (`osv-loader.qemu`) can be automatically downloaded by *capstan* from 
 the [OSv regular releases page](https://github.com/cloudius-systems/osv/releases) or manually from 
 the [nightly releases repo](https://github.com/osvunikernel/osv-nightly-releases/releases/tag/ci-master-latest).
+
+### Building from Source
 
 If you are comfortable with make and GCC toolchain and want to try the latest OSv code, then you should
 read this [part of the readme](#setting-up-development-environment) to guide you how to set up your
@@ -147,19 +169,19 @@ You can always see boot time breakdown by adding `--bootchart` parameter:
 ./scripts/run.py -e '--bootchart /hello'
 OSv v0.57.0-6-gb442a218
 eth0: 192.168.122.15
-	disk read (real mode): 58.62ms, (+58.62ms)
-	uncompress lzloader.elf: 77.20ms, (+18.58ms)
-	TLS initialization: 77.96ms, (+0.76ms)
-	.init functions: 79.75ms, (+1.79ms)
-	SMP launched: 80.11ms, (+0.36ms)
-	VFS initialized: 81.62ms, (+1.52ms)
-	Network initialized: 81.78ms, (+0.15ms)
-	pvpanic done: 81.91ms, (+0.14ms)
-	pci enumerated: 93.89ms, (+11.98ms)
-	drivers probe: 93.89ms, (+0.00ms)
-	drivers loaded: 174.80ms, (+80.91ms)
-	ROFS mounted: 176.88ms, (+2.08ms)
-	Total time: 178.01ms, (+1.13ms)
+        disk read (real mode): 58.62ms, (+58.62ms)
+        uncompress lzloader.elf: 77.20ms, (+18.58ms)
+        TLS initialization: 77.96ms, (+0.76ms)
+        .init functions: 79.75ms, (+1.79ms)
+        SMP launched: 80.11ms, (+0.36ms)
+        VFS initialized: 81.62ms, (+1.52ms)
+        Network initialized: 81.78ms, (+0.15ms)
+        pvpanic done: 81.91ms, (+0.14ms)
+        pci enumerated: 93.89ms, (+11.98ms)
+        drivers probe: 93.89ms, (+0.00ms)
+        drivers loaded: 174.80ms, (+80.91ms)
+        ROFS mounted: 176.88ms, (+2.08ms)
+        Total time: 178.01ms, (+1.13ms)
 Cmdline: /hello
 Hello from C code
 ```
