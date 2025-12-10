@@ -68,9 +68,19 @@ extern "C" int gdb_stub_main(int argc, char** argv) {
     bool success = false;
     
     if (transport_type == "tcp") {
-        uint16_t port = std::atoi(param.c_str());
-        debug("GDB stub: Initializing TCP transport on port %d\n", port);
-        success = GdbStubManager::instance().init_tcp(port);
+        try {
+            int port_int = std::stoi(param);
+            if (port_int < 1 || port_int > 65535) {
+                debug("GDB stub: Invalid port number %d (must be 1-65535)\n", port_int);
+                return 1;
+            }
+            uint16_t port = static_cast<uint16_t>(port_int);
+            debug("GDB stub: Initializing TCP transport on port %d\n", port);
+            success = GdbStubManager::instance().init_tcp(port);
+        } catch (const std::exception& e) {
+            debug("GDB stub: Invalid port parameter '%s': %s\n", param.c_str(), e.what());
+            return 1;
+        }
     } else if (transport_type == "serial") {
         debug("GDB stub: Initializing serial transport on %s\n", param.c_str());
         success = GdbStubManager::instance().init_serial(param);

@@ -122,7 +122,7 @@ gdb /path/to/hello
 ./scripts/run.py -e '/libgdb-stub.so --gdb-tcp 1234'
 
 # In another terminal
-gdb build/release/kernel.elf
+gdb build/release.x64/loader.elf  # Or build/release.aarch64/loader.elf for ARM
 (gdb) target remote :1234
 (gdb) info threads
 ```

@@ -40,7 +40,7 @@ public:
         if (raw[0] != '$') return false;
         
         size_t hash_pos = raw.find('#');
-        if (hash_pos == std::string::npos || hash_pos + 2 >= raw.length()) {
+        if (hash_pos == std::string::npos || hash_pos + 3 > raw.length()) {
             return false;
         }
         

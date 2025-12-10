@@ -44,7 +44,7 @@ bool Packet::parse(const std::string& raw) {
     if (raw[0] != '$') return false;
     
     size_t hash_pos = raw.find('#');
-    if (hash_pos == std::string::npos || hash_pos + 2 >= raw.length()) {
+    if (hash_pos == std::string::npos || hash_pos + 3 > raw.length()) {
         return false;
     }
     
@@ -491,16 +491,32 @@ std::string GdbStub::handle_read_memory(uint64_t addr, size_t length) {
     // Read memory and return as hex
     std::ostringstream oss;
     
-    // Simple read - in production, need to validate address ranges
-    // and handle page faults gracefully
+    // Validate address range for safety
+    // In a production implementation, should check:
+    // 1. Address is within valid memory regions
+    // 2. Memory is readable (not protected)
+    // 3. Length is reasonable (cap at some maximum)
+    
+    if (length == 0 || length > 4096) {
+        return "E01"; // Invalid length
+    }
+    
+    // Basic check: ensure address is not null and reasonably aligned
+    if (addr == 0) {
+        return "E02"; // Invalid address
+    }
+    
     try {
         const uint8_t* ptr = reinterpret_cast<const uint8_t*>(addr);
+        
+        // TODO: Add proper memory region validation
+        // For now, attempt to read and catch exceptions
         for (size_t i = 0; i < length; i++) {
             oss << std::hex << std::setw(2) << std::setfill('0') 
                 << static_cast<int>(ptr[i]);
         }
     } catch (...) {
-        return "E01";
+        return "E03"; // Memory access error
     }
     
     return oss.str();
@@ -508,6 +524,27 @@ std::string GdbStub::handle_read_memory(uint64_t addr, size_t length) {
 
 std::string GdbStub::handle_write_memory(uint64_t addr, const std::string& data) {
     // Write hex data to memory
+    
+    // Validate address and data length
+    if (addr == 0) {
+        return "E01"; // Invalid address
+    }
+    
+    if (data.length() == 0 || data.length() % 2 != 0) {
+        return "E02"; // Invalid data format
+    }
+    
+    size_t length = data.length() / 2;
+    if (length > 4096) {
+        return "E03"; // Data too large
+    }
+    
+    // TODO: Add proper memory region validation
+    // Should check:
+    // 1. Address range is writable
+    // 2. Not writing to protected/kernel memory
+    // 3. Proper permissions check
+    
     try {
         uint8_t* ptr = reinterpret_cast<uint8_t*>(addr);
         for (size_t i = 0; i < data.length(); i += 2) {
@@ -516,7 +553,7 @@ std::string GdbStub::handle_write_memory(uint64_t addr, const std::string& data)
         }
         return "OK";
     } catch (...) {
-        return "E01";
+        return "E04"; // Memory write error
     }
 }
 
