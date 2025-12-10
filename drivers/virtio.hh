@@ -59,6 +59,7 @@ enum {
     VIRTIO_ID_SCSI    = 8,
     VIRTIO_ID_9P      = 9,
     VIRTIO_ID_RPROC_SERIAL = 11,
+    VIRTIO_ID_VSOCK   = 19,
     VIRTIO_ID_FS      = 26,
 };
 
