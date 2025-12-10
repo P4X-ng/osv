@@ -338,7 +338,9 @@ bool jvm_balloon_api_impl::fault(balloon_ptr b, exception_frame *ef, mmu::jvm_ba
             return false;
         }
         trace_jvm_balloon_close(vma->start(), vma->end(), "write");
-        delete vma;
+        // Detach and schedule for deferred deletion to avoid deadlock
+        vma->detach_balloon();
+        mmu::schedule_deferred_vma_deletion(vma);
         return true;
     }
 
@@ -352,7 +354,9 @@ bool jvm_balloon_api_impl::fault(balloon_ptr b, exception_frame *ef, mmu::jvm_ba
         if (vma->effective_jvm_addr()) {
             return false;
         }
-        delete vma;
+        // Detach and schedule for deferred deletion to avoid deadlock
+        vma->detach_balloon();
+        mmu::schedule_deferred_vma_deletion(vma);
         trace_jvm_balloon_close(vma->start(), vma->end(), "nodecoder");
         return true;
     }
@@ -390,7 +394,9 @@ bool jvm_balloon_api_impl::fault(balloon_ptr b, exception_frame *ef, mmu::jvm_ba
 
         if (vma->add_partial(skip, candidate)) {
             trace_jvm_balloon_close(vma->start(), vma->end(), "partialclose");
-            delete vma;
+            // Detach and schedule for deferred deletion to avoid deadlock
+            vma->detach_balloon();
+            mmu::schedule_deferred_vma_deletion(vma);
         }
     } else {
         // For the partial size it can actually happen that we got lowered in size

@@ -155,6 +155,10 @@ private:
 #if CONF_memory_jvm_balloon
 ulong map_jvm(unsigned char* addr, size_t size, size_t align, balloon_ptr b);
 
+// Schedule a JVM balloon VMA for deferred deletion
+// This must be called while holding the vma_list read lock
+void schedule_deferred_vma_deletion(jvm_balloon_vma* vma);
+
 class jvm_balloon_vma : public vma {
 public:
     jvm_balloon_vma(unsigned char *jvm_addr, uintptr_t start, uintptr_t end, balloon_ptr b, unsigned perm, unsigned flags);
@@ -183,6 +187,7 @@ private:
     unsigned _real_perm;
     unsigned _real_flags;
     uintptr_t _real_size;
+    bool _detached = false;
 };
 #endif
 
