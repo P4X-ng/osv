@@ -2,6 +2,7 @@ from osv.modules.filemap import FileMap
 from osv.modules import api
 import os, os.path
 import subprocess
+import sys
 
 # This module provides .NET runtime support for OSv
 # It copies .NET SDK/Runtime from the host system to the OSv image
@@ -46,7 +47,7 @@ if dotnet_path is None:
     print('Common installation locations:')
     for path in dotnet_paths:
         print('  - ' + path)
-    exit(-1)
+    sys.exit(1)
 
 # Verify .NET version
 try:
