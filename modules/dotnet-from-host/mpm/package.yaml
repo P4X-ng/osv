@@ -1,3 +1,5 @@
 name: osv.dotnet-from-host
 title: .NET Runtime from Host
 author: OSv Project
+version: 1.0.0
+description: Provides .NET runtime support by copying .NET SDK/Runtime from the host system to OSv image

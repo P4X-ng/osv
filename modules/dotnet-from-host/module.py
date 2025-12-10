@@ -55,14 +55,21 @@ try:
         [os.path.join(dotnet_path, 'dotnet'), '--version'],
         stderr=subprocess.STDOUT
     ).decode('utf-8').strip()
-    print('Found .NET version: ' + dotnet_version)
     
-    # Check if version is at least 5.0
-    major_version = int(dotnet_version.split('.')[0])
-    if major_version < 5:
-        print('Warning: .NET version %s detected. Version 5.0 or later is recommended.' % dotnet_version)
+    # Basic sanity check on version string
+    if len(dotnet_version) > 100 or not dotnet_version.replace('.', '').replace('-', '').replace('+', '').replace('_', '').isalnum():
+        print('Warning: Unexpected .NET version format, skipping validation')
+    else:
+        print('Found .NET version: {}'.format(dotnet_version))
+        
+        # Check if version is at least 5.0
+        major_version = int(dotnet_version.split('.')[0])
+        if major_version < 5:
+            print('Warning: .NET version {} detected. Version 5.0 or later is recommended.'.format(dotnet_version))
 except (subprocess.CalledProcessError, FileNotFoundError, ValueError) as e:
-    print('Warning: Could not verify .NET version: %s' % str(e))
+    # Limit error message length to prevent potential issues
+    error_msg = str(e)[:200]
+    print('Warning: Could not verify .NET version: {}'.format(error_msg))
 
 # Add .NET runtime files to the image
 # We include:
