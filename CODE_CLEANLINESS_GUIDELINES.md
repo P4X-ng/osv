@@ -350,6 +350,8 @@ git add part2.cc
 git commit -m "Split large_file.cc: extract part2"
 ```
 
+**Note**: This approach preserves history for part1.cc but creates part2.cc as a new file. For better history preservation, consider using `git log --follow` to track renames, or document the split in commit messages.
+
 ### 4. Update Build System
 
 After splitting, update Makefiles:
