@@ -114,7 +114,39 @@ This directory contains comprehensive documentation for the OSv unikernel projec
 
 ---
 
-### 5. [Quick Reference Guide](QUICK_REFERENCE.md)
+### 5. [.NET Runtime Support Guide](DOTNET_SUPPORT.md)
+**Purpose:** Comprehensive guide for running .NET applications on OSv
+
+**Contents:**
+- Prerequisites and .NET installation
+- Symbol hiding requirement (conf_hide_symbols=1) explanation
+- Quick start guide with examples
+- Deployment strategies (framework-dependent, self-contained, trimmed)
+- ASP.NET Core web application support
+- Console applications and worker services
+- Performance tuning for .NET on OSv
+- Known issues and limitations
+- Comprehensive troubleshooting guide
+- Multiple real-world examples
+
+**Audience:** .NET developers, DevOps engineers, cloud architects
+
+**Use When:**
+- Running .NET Core/5+ applications on OSv
+- Porting ASP.NET Core web services
+- Understanding C++ library conflict resolution
+- Troubleshooting .NET runtime issues
+- Optimizing .NET performance on OSv
+
+**Key Requirements:**
+- Must use `conf_hide_symbols=1` to avoid libstdc++ conflicts
+- Recommended: .NET 5.0 or later (6.0, 8.0 LTS preferred)
+- Framework-dependent deployment recommended for smaller images
+- Minimum 512MB RAM for typical .NET applications
+
+---
+
+### 6. [Quick Reference Guide](QUICK_REFERENCE.md)
 **Purpose:** Cheat sheet for common commands and configurations
 
 **Contents:**
@@ -164,7 +196,8 @@ This directory contains comprehensive documentation for the OSv unikernel projec
 
 1. **Check compatibility:** [Best Practices - Section 2.1](BEST_PRACTICES_AND_PITFALLS.md#21-assessing-application-compatibility)
 2. **Follow language guide:** [Best Practices - Section 2.3](BEST_PRACTICES_AND_PITFALLS.md#23-language-specific-guidelines)
-3. **Refer to examples:** [Quick Reference - Language-Specific](QUICK_REFERENCE.md#language-specific)
+3. **For .NET apps:** [.NET Support Guide](DOTNET_SUPPORT.md)
+4. **Refer to examples:** [Quick Reference - Language-Specific](QUICK_REFERENCE.md#language-specific)
 
 ### Advanced Customization?
 
@@ -180,6 +213,7 @@ This directory contains comprehensive documentation for the OSv unikernel projec
 |----------|-------------|-----------------|
 | First-time user | Best Practices (Introduction & App Porting) | Quick Reference |
 | Application porting | Best Practices (App Porting) | Quick Reference (language section) |
+| .NET application porting | .NET Support Guide | Best Practices (App Porting) |
 | Performance tuning | Best Practices (Performance) | Customization (Performance Tuning) |
 | Size optimization | Customization (Size Reduction) | Quick Reference (optimization) |
 | Boot time optimization | Best Practices (Boot Time) | Customization (Boot Optimization) |
@@ -335,6 +369,7 @@ If you find errors or omissions:
 | Customization Guide | 2024-12 | 1.0 | Complete |
 | Custom Integration | 2024-12 | 1.0 | Complete |
 | Best Practices | 2024-12 | 1.0 | Complete |
+| .NET Support Guide | 2024-12 | 1.0 | Complete |
 | Quick Reference | 2024-12 | 1.0 | Complete |
 
 ---
