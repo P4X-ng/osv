@@ -51,7 +51,7 @@ struct vsock_pcb {
 #define VSOCK_STATE_CLOSING     5
 
 // Protocol user requests
-static struct pr_usrreqs vsock_usrreqs = {
+struct pr_usrreqs vsock_usrreqs = {
     .pru_attach = vsock_attach,
     .pru_detach = vsock_detach,
     .pru_bind = vsock_bind,

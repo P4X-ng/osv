@@ -34,6 +34,7 @@ enum {
     tracepoint_base,
     malloc_pools,
     idt,
+    virtio_vsock,
 };
 }
 

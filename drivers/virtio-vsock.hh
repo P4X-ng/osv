@@ -73,6 +73,9 @@ private:
     uint64_t _rx_bytes;
 };
 
+// Global function for protocol layer access
+vsock* get_vsock_driver();
+
 }
 
 #endif /* VIRTIO_VSOCK_DRIVER_H */
