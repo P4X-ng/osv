@@ -53,13 +53,21 @@ void debug_early_u64(const char *msg, unsigned long long val);
     debug_early_u64(msg " ENTERED, lr=", lr); \
     } \
 
+#elif defined(__riscv)
+#define debug_early_entry(msg) \
+    { \
+    register unsigned long long ra; \
+    asm("mv %0, ra" : "=r"(ra)); \
+    debug_early_u64(msg " ENTERED, ra=", ra); \
+    } \
+
 #else
 #define debug_early_entry(msg) \
     { \
     debug_early(msg " ENTERED\n"); \
     } \
 
-#endif /* !__aarch64__ */
+#endif /* !__aarch64__ && !__riscv */
 
 int vkprintf(const char *__restrict fmt, va_list ap)
 	__attribute__((format(printf, 1, 0)));
