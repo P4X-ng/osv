@@ -6,6 +6,7 @@
  */
 
 #include <atomic>
+#include <errno.h>
 #include <memory>
 #include <mutex>
 #include <new>
