@@ -160,7 +160,7 @@ class UbuntuPackageBuilder:
                     print(f"    Warning: Could not find downloaded file for {pkg}")
                     
             except subprocess.CalledProcessError as e:
-                error_msg = e.stderr if e.stderr else 'Unknown error'
+                error_msg = e.stderr if (e.stderr is not None and e.stderr) else 'Unknown error'
                 print(f"    Warning: Could not download {pkg}: {error_msg}")
                 continue
         
@@ -273,7 +273,8 @@ class UbuntuPackageBuilder:
         with open(module_py_path, 'w') as f:
             f.write('from osv.modules import api\n\n')
             if self.command_line:
-                f.write(f"default = api.run(cmdline='{self.command_line}')\n")
+                # Use repr() to safely escape the command line string
+                f.write(f"default = api.run(cmdline={repr(self.command_line)})\n")
             else:
                 f.write("# No default command line specified\n")
         
