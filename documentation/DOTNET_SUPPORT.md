@@ -463,7 +463,7 @@ Common .NET memory settings:
 ### Networking
 
 - IPv4 is fully supported
-- IPv6 requires building from the `ipv6` branch
+- IPv6 requires building from the [ipv6 branch](https://github.com/cloudius-systems/osv/tree/ipv6) (upstream)
 - DPDK networking is not yet tested with .NET
 
 ### Native Interop

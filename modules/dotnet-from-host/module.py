@@ -49,6 +49,14 @@ if dotnet_path is None:
         print('  - ' + path)
     sys.exit(1)
 
+def is_valid_version_string(version):
+    """Validate that version string looks reasonable before printing."""
+    if len(version) > 100:
+        return False
+    # Allow alphanumeric, dots, dashes, plus, and underscores
+    cleaned = version.replace('.', '').replace('-', '').replace('+', '').replace('_', '')
+    return cleaned.isalnum()
+
 # Verify .NET version
 try:
     dotnet_version = subprocess.check_output(
@@ -56,8 +64,7 @@ try:
         stderr=subprocess.STDOUT
     ).decode('utf-8').strip()
     
-    # Basic sanity check on version string
-    if len(dotnet_version) > 100 or not dotnet_version.replace('.', '').replace('-', '').replace('+', '').replace('_', '').isalnum():
+    if not is_valid_version_string(dotnet_version):
         print('Warning: Unexpected .NET version format, skipping validation')
     else:
         print('Found .NET version: {}'.format(dotnet_version))
