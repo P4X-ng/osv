@@ -58,6 +58,13 @@ void* pages = memory::alloc_page();
    class ObjectPool {
        std::vector<Object*> free_list;
    public:
+       ~ObjectPool() {
+           // Clean up all objects in the pool
+           for (auto obj : free_list) {
+               delete obj;
+           }
+       }
+       
        Object* allocate() {
            if (!free_list.empty()) {
                auto obj = free_list.back();
@@ -66,8 +73,11 @@ void* pages = memory::alloc_page();
            }
            return new Object();
        }
+       
        void deallocate(Object* obj) {
-           free_list.push_back(obj);
+           if (obj) {
+               free_list.push_back(obj);
+           }
        }
    };
    ```
@@ -96,7 +106,7 @@ void* pages = memory::alloc_page();
    // Align data structures to cache lines (64 bytes)
    struct alignas(64) CacheLine {
        // Prevents false sharing between CPUs
-       atomic<int> counter;
+       std::atomic<int> counter;
        char padding[60];
    };
    ```

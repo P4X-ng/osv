@@ -70,8 +70,8 @@ Used extensively throughout OSv for automatic resource management:
 class file_handle {
     file* fp;
 public:
-    file_handle(const char* path, int flags) {
-        fp = fopen(path, flags);
+    file_handle(const char* path, const char* mode) {
+        fp = fopen(path, mode);
         if (!fp) throw errno_error(errno);
     }
     ~file_handle() {
@@ -82,7 +82,7 @@ public:
 
 // Usage - automatically closes file
 void read_config() {
-    file_handle f("/etc/config", O_RDONLY);
+    file_handle f("/etc/config", "r");
     // Use f.get()
     // File automatically closed when function exits
 }
