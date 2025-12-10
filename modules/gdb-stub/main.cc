@@ -6,7 +6,7 @@
  */
 
 #include "gdb_stub.hh"
-#include <osv/debug.h>
+#include <osv/debug.hh>
 
 // Entry point for the GDB stub shared library
 extern "C" int main(int argc, char** argv)

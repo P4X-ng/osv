@@ -6,7 +6,7 @@
  */
 
 #include "gdb_protocol.hh"
-#include <osv/debug.h>
+#include <osv/debug.hh>
 #include <sstream>
 #include <iomanip>
 

@@ -9,7 +9,7 @@
 #include "gdb_protocol.hh"
 #include "gdb_transport.hh"
 #include "gdb_arch.hh"
-#include <osv/debug.h>
+#include <osv/debug.hh>
 #include <osv/sched.hh>
 #include <osv/mmu.hh>
 #include <cstring>
