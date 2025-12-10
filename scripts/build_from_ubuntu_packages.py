@@ -108,8 +108,8 @@ class UbuntuPackageBuilder:
             for line in result.stdout.split('\n'):
                 # Look for lines with "Depends:" 
                 if 'Depends:' in line:
-                    # Extract package name
-                    match = re.search(r'Depends:\s+(\S+)', line)
+                    # Extract package name (without version constraints)
+                    match = re.search(r'Depends:\s+([^(\s]+)', line)
                     if match:
                         deps.append(match.group(1))
             
@@ -160,7 +160,7 @@ class UbuntuPackageBuilder:
                     print(f"    Warning: Could not find downloaded file for {pkg}")
                     
             except subprocess.CalledProcessError as e:
-                error_msg = e.stderr if (e.stderr is not None and e.stderr) else 'Unknown error'
+                error_msg = e.stderr or 'Unknown error'
                 print(f"    Warning: Could not download {pkg}: {error_msg}")
                 continue
         
@@ -257,8 +257,7 @@ class UbuntuPackageBuilder:
                     # Host path relative to module directory using ${MODULE_DIR} variable
                     # This makes the manifest portable across different machines
                     host_path_rel = Path('extracted') / rel_path
-                    # Use f-string with escaped braces for MODULE_DIR variable
-                    host_path = f'${{MODULE_DIR}}/{host_path_rel}'
+                    host_path = '${MODULE_DIR}/' + str(host_path_rel)
                     
                     # Manifest format: guest_path: host_path
                     f.write(f'{guest_path}: {host_path}\n')
