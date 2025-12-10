@@ -2,6 +2,12 @@ name: "Label PRs and auto-comment"
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   pr_label_comment:
     runs-on: ubuntu-latest
