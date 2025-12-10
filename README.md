@@ -431,6 +431,22 @@ this [wiki](https://github.com/cloudius-systems/osv/wiki/Trace-analysis-using-tr
  [that wiki page](https://github.com/cloudius-systems/osv/wiki/Using-OSv-REST-API). There is also
  lighter [monitoring REST API module](https://github.com/cloudius-systems/osv/commit/aa32614221254ce300f401bb99c506b528b85682) 
  that is effectively a read-only subset of the former one. 
+
+## Developer Documentation
+
+OSv has comprehensive documentation for developers:
+
+- [CODINGSTYLE.md](CODINGSTYLE.md) - Coding style guidelines for OSv development
+- [BEST_PRACTICES.md](BEST_PRACTICES.md) - Development best practices and common pitfalls
+- [CODE_REVIEW.md](CODE_REVIEW.md) - Code review guidelines
+- [CODE_CLEANLINESS_GUIDELINES.md](CODE_CLEANLINESS_GUIDELINES.md) - Guidelines for maintaining code quality and organization
+- [COMMON_ISSUES.md](COMMON_ISSUES.md) - Solutions to common development issues
+- [SIZE_OPTIMIZATION.md](SIZE_OPTIMIZATION.md) - Techniques for reducing image size
+- [OSV_GUIDE.md](OSV_GUIDE.md) - Comprehensive OSv guide
+- [KERNEL_CUSTOMIZATION.md](KERNEL_CUSTOMIZATION.md) - Guide for kernel customization
+
+For periodic code reviews and quality assessments, see:
+- [CODE_CLEANLINESS_REVIEW_RESPONSE.md](CODE_CLEANLINESS_REVIEW_RESPONSE.md) - Response to automated code reviews
  
 ## FAQ and Contact
 
