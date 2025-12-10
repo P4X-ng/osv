@@ -85,16 +85,19 @@ parse_command_line_regex(const std::string& line, bool& ok) {
             // Unquoted string - process escape sequences
             current_command.push_back(process_escape_sequences(match[3].str()));
         } else if (match[4].matched) {
-            // Command delimiter
+            // Command delimiter - add it to current command and finish the command
             if (!current_command.empty()) {
+                current_command.push_back(match[4].str());
                 result.push_back(current_command);
                 current_command.clear();
             }
         }
     }
     
-    // Add the last command if it exists and doesn't end with a delimiter
+    // Add the last command if it exists
     if (!current_command.empty()) {
+        // If no delimiter was found, add empty string as terminator
+        current_command.push_back("");
         result.push_back(current_command);
     }
     
