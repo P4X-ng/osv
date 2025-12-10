@@ -129,7 +129,8 @@ jobs:
           echo "### README.md Quality Check:" >> /tmp/doc-analysis.md
           
           if [ -f "README.md" ]; then
-            word_count=$(wc -w < README.md)
+            word_count=$(wc -w < README.md | tr -d ' \n')
+            word_count=${word_count:-0}
             echo "- Word count: $word_count" >> /tmp/doc-analysis.md
             
             if [ $word_count -lt 50 ]; then
@@ -177,11 +178,14 @@ jobs:
               ! -name "__init__.py" \
               -type f | while read -r file; do
               # Count functions and classes
-              func_count=$(grep -c "^def " "$file" 2>/dev/null || echo 0)
-              class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
-              docstring_count=$(grep -c '"""' "$file" 2>/dev/null || echo 0)
+              func_count=$(grep -c "^def " "$file" 2>/dev/null | head -1 || echo 0)
+              class_count=$(grep -c "^class " "$file" 2>/dev/null | head -1 || echo 0)
+              docstring_count=$(grep -c '"""' "$file" 2>/dev/null | head -1 || echo 0)
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and clean
+              func_count=$(echo "$func_count" | tr -d '\n' | grep -o '[0-9]*' | head -1)
+              class_count=$(echo "$class_count" | tr -d '\n' | grep -o '[0-9]*' | head -1)
+              docstring_count=$(echo "$docstring_count" | tr -d '\n' | grep -o '[0-9]*' | head -1)
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               docstring_count=${docstring_count:-0}
@@ -203,11 +207,14 @@ jobs:
               ! -path "*/build/*" \
               -type f | while read -r file; do
               # Count functions and classes
-              func_count=$(grep -cE "(^function |^export function |^const .* = .*=>)" "$file" 2>/dev/null || echo 0)
-              class_count=$(grep -c "^class " "$file" 2>/dev/null || echo 0)
-              jsdoc_count=$(grep -c '/\*\*' "$file" 2>/dev/null || echo 0)
+              func_count=$(grep -cE "(^function |^export function |^const .* = .*=>)" "$file" 2>/dev/null | head -1 || echo 0)
+              class_count=$(grep -c "^class " "$file" 2>/dev/null | head -1 || echo 0)
+              jsdoc_count=$(grep -c '/\*\*' "$file" 2>/dev/null | head -1 || echo 0)
               
-              # Ensure variables are numeric
+              # Ensure variables are numeric and clean
+              func_count=$(echo "$func_count" | tr -d '\n' | grep -o '[0-9]*' | head -1)
+              class_count=$(echo "$class_count" | tr -d '\n' | grep -o '[0-9]*' | head -1)
+              jsdoc_count=$(echo "$jsdoc_count" | tr -d '\n' | grep -o '[0-9]*' | head -1)
               func_count=${func_count:-0}
               class_count=${class_count:-0}
               jsdoc_count=${jsdoc_count:-0}
@@ -234,8 +241,12 @@ jobs:
             echo "" >> /tmp/advanced-doc-review.md
             echo "#### C/C++ Documentation:" >> /tmp/advanced-doc-review.md
             
-            total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l)
-            documented_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -exec grep -l "/\*\*\|///" {} \; | wc -l)
+            total_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" | wc -l | tr -d ' \n')
+            documented_files=$(find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -exec grep -l "/\*\*\|///" {} \; | wc -l | tr -d ' \n')
+            
+            # Ensure variables are numeric
+            total_files=${total_files:-0}
+            documented_files=${documented_files:-0}
             
             echo "- Total C/C++ files: $total_files" >> /tmp/advanced-doc-review.md
             echo "- Files with documentation: $documented_files" >> /tmp/advanced-doc-review.md
