@@ -18,6 +18,7 @@
  */
 
 #include <unistd.h>
+#include <errno.h>
 #include <vector>
 #include <string>
 #include <cstring>
