@@ -26,8 +26,8 @@ else
   platform="Unknown Linux"
 fi
 
-OSV_VERSION=$(scripts/osv-version.sh | cut -d - -f 1 | grep -Po "[^v]*")
-OSV_COMMIT=$(scripts/osv-version.sh | grep -Po "\-g.*" | grep -oP "[^-g]*")
+OSV_VERSION=$(scripts/osv-version.sh | cut -d - -f 1 | sed 's/^v//')
+OSV_COMMIT=$(scripts/osv-version.sh | grep -E "\-g.*" | sed 's/.*-g//')
 
 if [ "$OSV_COMMIT" != "" ]; then
   version="$OSV_VERSION-$OSV_COMMIT"

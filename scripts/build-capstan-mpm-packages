@@ -65,8 +65,8 @@ echo "Loader_image=[$loader_image]"
 OSV_ROOT=$(realpath "$(dirname $0)/..")
 OSV_BUILD=$OSV_ROOT/build/release
 
-OSV_VERSION=$($OSV_ROOT/scripts/osv-version.sh | cut -d - -f 1 | grep -Po "[^v]*")
-OSV_COMMIT=$($OSV_ROOT/scripts/osv-version.sh | grep -Po "\-g.*" | grep -oP "[^-g]*")
+OSV_VERSION=$($OSV_ROOT/scripts/osv-version.sh | cut -d - -f 1 | sed 's/^v//')
+OSV_COMMIT=$($OSV_ROOT/scripts/osv-version.sh | grep -E "\-g.*" | sed 's/.*-g//')
 
 if [ "$OSV_COMMIT" != "" ]; then
   OSV_VERSION="$OSV_VERSION-$OSV_COMMIT"
@@ -163,9 +163,9 @@ prepare_package() {
      --author "Anonymous" --version "$package_version" -p "$PLATFORM"
 
   if [ -f "$module_yaml" ]; then
-    grep -P '^require:|^-' $module_yaml >> $package_dir/meta/package.yaml
+    grep -E '^require:|^-' $module_yaml >> $package_dir/meta/package.yaml
   elif [ -f "$app_yaml" ]; then
-    grep -P '^require:|^-' $app_yaml >> $package_dir/meta/package.yaml
+    grep -E '^require:|^-' $app_yaml >> $package_dir/meta/package.yaml
   fi
 
   cp -a $package_dir/meta/package.yaml $OUTPUT/${package_name}.yaml
