@@ -6,15 +6,24 @@
 .hidden __tlsdesc_static
 .type __tlsdesc_static,@function
 __tlsdesc_static:
+	.cfi_startproc
 	ldr x0,[x0,#8]
 	ret
+	.cfi_endproc
 
 .global __tlsdesc_dynamic
 .type __tlsdesc_dynamic,@function
 __tlsdesc_dynamic:
+	.cfi_startproc
 //FAST PATH
         stp x1,x2,[sp, #-16]! // save the 4 registers we will be using in fast path
+        .cfi_def_cfa_offset 16
+        .cfi_offset x1, 0
+        .cfi_offset x2, 8
         stp x3,x4,[sp, #-16]!
+        .cfi_def_cfa_offset 32
+        .cfi_offset x3, 0
+        .cfi_offset x4, 8
 
         ldr x0,[x0,#8]        // p - pointer to the module_and_offset struct passed as an argument to this function
         ldr x2,[x0]           // store p->module in x2
@@ -34,30 +43,70 @@ __tlsdesc_dynamic:
         sub x0,x0,x1          // subtract tpidr_el0 (stored in x1) per TLS descriptor contract and return it
 
         ldp x3,x4,[sp],#16
+        .cfi_restore x3
+        .cfi_restore x4
+        .cfi_def_cfa_offset 16
         ldp x1,x2,[sp],#16
+        .cfi_restore x1
+        .cfi_restore x2
+        .cfi_def_cfa_offset 0
         ret
 
 //SLOW PATH
-1:      stp	x29, x30, [sp, #-48]!
+1:      .cfi_def_cfa_offset 32
+        stp	x29, x30, [sp, #-48]!
+        .cfi_def_cfa_offset 80
+        .cfi_offset x29, 0
+        .cfi_offset x30, 8
         mov     x29, sp
+        .cfi_def_cfa_register x29
 
         //Save all regular registers on the stack
         stp x0, xzr, [sp, #-16]!
+        .cfi_offset x0, -16
 
         stp x1, x2, [sp, #-16]!
+        .cfi_offset x1, -32
+        .cfi_offset x2, -24
         stp x3, x4, [sp, #-16]!
+        .cfi_offset x3, -48
+        .cfi_offset x4, -40
         stp x5, x6, [sp, #-16]!
+        .cfi_offset x5, -64
+        .cfi_offset x6, -56
         stp x7, x8, [sp, #-16]!
+        .cfi_offset x7, -80
+        .cfi_offset x8, -72
         stp x9, x10, [sp, #-16]!
+        .cfi_offset x9, -96
+        .cfi_offset x10, -88
         stp x11, x12, [sp, #-16]!
+        .cfi_offset x11, -112
+        .cfi_offset x12, -104
         stp x13, x14, [sp, #-16]!
+        .cfi_offset x13, -128
+        .cfi_offset x14, -120
         stp x15, x16, [sp, #-16]!
+        .cfi_offset x15, -144
+        .cfi_offset x16, -136
         stp x17, x18, [sp, #-16]!
+        .cfi_offset x17, -160
+        .cfi_offset x18, -152
         stp x19, x20, [sp, #-16]!
+        .cfi_offset x19, -176
+        .cfi_offset x20, -168
         stp x21, x22, [sp, #-16]!
+        .cfi_offset x21, -192
+        .cfi_offset x22, -184
         stp x23, x24, [sp, #-16]!
+        .cfi_offset x23, -208
+        .cfi_offset x24, -200
         stp x25, x26, [sp, #-16]!
+        .cfi_offset x25, -224
+        .cfi_offset x26, -216
         stp x27, x28, [sp, #-16]!
+        .cfi_offset x27, -240
+        .cfi_offset x28, -232
 
         //The __tls_dynamic_setup will save all FPU registers as well
         bl __tls_dynamic_setup
@@ -83,3 +132,4 @@ __tlsdesc_dynamic:
         ldp x29, x30, [sp], #48
 
         b 2b
+        .cfi_endproc
