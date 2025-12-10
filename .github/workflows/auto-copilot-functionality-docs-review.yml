@@ -130,9 +130,12 @@ jobs:
           
           if [ -f "README.md" ]; then
             word_count=$(wc -w < README.md)
+            # Ensure word_count is numeric and handle potential issues
+            word_count=$(echo "$word_count" | head -n1 | tr -d '\n' | grep -E '^[0-9]+$' || echo 0)
+            word_count=${word_count:-0}
             echo "- Word count: $word_count" >> /tmp/doc-analysis.md
             
-            if [ $word_count -lt 50 ]; then
+            if [[ "$word_count" =~ ^[0-9]+$ ]] && [ $word_count -lt 50 ]; then
               echo "⚠️ README.md is very short (< 50 words)" >> /tmp/doc-analysis.md
             else
               echo "✅ README.md has adequate content" >> /tmp/doc-analysis.md

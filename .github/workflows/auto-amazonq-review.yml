@@ -128,6 +128,9 @@ jobs:
             | wc -l > /tmp/file_count.txt
           
           FILE_COUNT=$(cat /tmp/file_count.txt)
+          # Ensure FILE_COUNT is numeric and handle potential issues
+          FILE_COUNT=$(echo "$FILE_COUNT" | head -n1 | tr -d '\n' | grep -E '^[0-9]+$' || echo 0)
+          FILE_COUNT=${FILE_COUNT:-0}
           echo "- Total source files analyzed: $FILE_COUNT" >> /tmp/amazonq-report.md
           echo "" >> /tmp/amazonq-report.md
           
