@@ -1,0 +1,12 @@
+# Build artifacts
+*.o
+*.d
+*.so
+usr.manifest
+test_standalone
+test_gdb_stub
+
+# Editor files
+*~
+*.swp
+.*.swp
