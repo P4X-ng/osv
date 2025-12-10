@@ -3,8 +3,8 @@
 OSV_DIR=$(readlink -f $(dirname $0)/../..)
 CAPSTAN_REPO=$HOME/.capstan
 
-OSV_VERSION=$($OSV_DIR/scripts/osv-version.sh | cut -d - -f 1 | grep -Po "[^v]*")
-OSV_COMMIT=$($OSV_DIR/scripts/osv-version.sh | grep -Po "\-g.*" | grep -oP "[^-g]*")
+OSV_VERSION=$($OSV_DIR/scripts/osv-version.sh | cut -d - -f 1 | sed 's/^v//')
+OSV_COMMIT=$($OSV_DIR/scripts/osv-version.sh | grep -E "\-g.*" | sed 's/.*-g//')
 
 if [ "$OSV_COMMIT" != "" ]; then
   OSV_VERSION="$OSV_VERSION-$OSV_COMMIT"
@@ -12,32 +12,32 @@ fi
 
 argv0=${0##*/}
 usage() {
-	cat <<-EOF
-	Compose and test apps out ouf pre-built capstan packages
+        cat <<-EOF
+        Compose and test apps out ouf pre-built capstan packages
 
-	Usage: ${argv0} [options] <group_of_tests> | <test_app_name>
-	Options:
-	  -c              Compose test app image only
-	  -r              Run test app only (must have been composed earlier)
-	  -R              Compose test app image with RoFS (ZFS is the default)
-	  -l              Use latest OSv kernel from build/last to build test image
-	  -f              Run OSv on firecracker
-	  -v              Verbose: show output from capstan and tested app
-	  -L loader	  Use specific loader from capstan repository
+        Usage: ${argv0} [options] <group_of_tests> | <test_app_name>
+        Options:
+          -c              Compose test app image only
+          -r              Run test app only (must have been composed earlier)
+          -R              Compose test app image with RoFS (ZFS is the default)
+          -l              Use latest OSv kernel from build/last to build test image
+          -f              Run OSv on firecracker
+          -v              Verbose: show output from capstan and tested app
+          -L loader       Use specific loader from capstan repository
 
-	Test groups:
-	  simple - simple apps like golang-example
-	  http - httpserver apps
-	  http-java - java httpserver apps
-	  java <name> - java app
-	  http-node - node http apps
-	  node <name> - node app
-	  with_tester - apps tested with extra tester script like redis
-	  unit_tests - unit tests
-	  httpserver_api_tests - httpserver API unit tests
-	  all - all apps
-	EOF
-	exit ${1:-0}
+        Test groups:
+          simple - simple apps like golang-example
+          http - httpserver apps
+          http-java - java httpserver apps
+          java <name> - java app
+          http-node - node http apps
+          node <name> - node app
+          with_tester - apps tested with extra tester script like redis
+          unit_tests - unit tests
+          httpserver_api_tests - httpserver API unit tests
+          all - all apps
+        EOF
+        exit ${1:-0}
 }
 
 FS=zfs
@@ -46,24 +46,24 @@ RUN_ONLY=false
 OSV_HYPERVISOR="qemu"
 
 while getopts crRlL:fh: OPT ; do
-	case ${OPT} in
-	c) COMPOSE_ONLY=true;;
-	r) RUN_ONLY=true;;
-	R) FS=rofs;;
-	l) LOADER="osv-latest-loader";;
-	f) OSV_HYPERVISOR="firecracker";;
-	L) LOADER="$OPTARG";;
-	h) usage;;
-	?) usage 1;;
-	esac
+        case ${OPT} in
+        c) COMPOSE_ONLY=true;;
+        r) RUN_ONLY=true;;
+        R) FS=rofs;;
+        l) LOADER="osv-latest-loader";;
+        f) OSV_HYPERVISOR="firecracker";;
+        L) LOADER="$OPTARG";;
+        h) usage;;
+        ?) usage 1;;
+        esac
 done
 
 if [ "$LOADER" == "" ]; then
-	if [ "$FS" == "rofs" ]; then
-		LOADER="osv-loader"
-	else
-		LOADER="osv-loader-with-zfs"
-	fi
+        if [ "$FS" == "rofs" ]; then
+                LOADER="osv-loader"
+        else
+                LOADER="osv-loader-with-zfs"
+        fi
 fi
 
 export OSV_HYPERVISOR

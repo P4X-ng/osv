@@ -11,9 +11,9 @@ letter=${package_directory:0:1}
 ports_main_repo_url="http://ports.ubuntu.com/pool/main/$letter/$package_directory/"
 ports_universe_repo_url="http://ports.ubuntu.com/pool/universe/$letter/$package_directory/"
 
-package_file_name=$(wget -t 1 -qO- $ports_main_repo_url | grep -Po "href=\"[^\"]*\"" | grep ${arch} | grep -Po "${package}[^\"]*" | tail -n 1)
+package_file_name=$(wget -t 1 -qO- $ports_main_repo_url | sed -n 's/.*href="\([^"]*\)".*/\1/p' | grep ${arch} | grep "${package}" | tail -n 1)
 if [[ "${package_file_name}" == "" ]]; then
-   package_file_name=$(wget -t 1 -qO- $ports_universe_repo_url | grep -Po "href=\"[^\"]*\"" | grep ${arch} | grep -Po "${package}[^\"]*" | tail -n 1)
+   package_file_name=$(wget -t 1 -qO- $ports_universe_repo_url | sed -n 's/.*href="\([^"]*\)".*/\1/p' | grep ${arch} | grep "${package}" | tail -n 1)
    package_url="${ports_universe_repo_url}${package_file_name}"
 else
    package_url="${ports_main_repo_url}${package_file_name}"

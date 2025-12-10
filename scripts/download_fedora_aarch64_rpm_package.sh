@@ -9,14 +9,14 @@ arch=aarch64
 letter=${package:0:1}
 
 main_repo_url="https://download-ib01.fedoraproject.org/pub/fedora/linux/releases/$release/Everything/$arch/os/Packages/$letter/"
-version=$(wget -t 1 -qO- $main_repo_url | grep "${package}-[0-9].*$arch" | grep -Po "href=\".*\"" | sed -e "s/href=\"${package}-\(.*\)\.$arch\.rpm\"/\1/g" | tail -l)
+version=$(wget -t 1 -qO- $main_repo_url | grep "${package}-[0-9].*$arch" | sed -n 's/.*href="\([^"]*\)".*/\1/p' | sed -e "s/${package}-\(.*\)\.$arch\.rpm/\1/g" | tail -l)
 
 archive_repo_url="http://archives.fedoraproject.org/pub/archive/fedora/linux/releases/$release/Everything/$arch/os/Packages/$letter/"
 if [[ "${version}" != "" ]]; then
   file_name="${package}-${version}.aarch64.rpm"
   full_url="${main_repo_url}${file_name}"
 else
-  version=$(wget -t 1 -qO- $archive_repo_url | grep "${package}-[0-9].*$arch" | grep -Po "<a href.*>" | sed -e "s/<a href\=\"${package}-\(.*\)\.$arch\.rpm\".*/\1/g" | tail -l)
+  version=$(wget -t 1 -qO- $archive_repo_url | grep "${package}-[0-9].*$arch" | sed -n 's/.*<a href="\([^"]*\)".*/\1/p' | sed -e "s/${package}-\(.*\)\.$arch\.rpm/\1/g" | tail -l)
   if [[ "${version}" != "" ]]; then
     file_name="${package}-${version}.aarch64.rpm"
     full_url="${archive_repo_url}${file_name}"
