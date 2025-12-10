@@ -8,35 +8,7 @@ import argparse
 from functools import reduce
 from osv.modules import api, resolve, filemap
 
-class isolated_jvm(api.basic_app):
-    multimain_manifest = '/etc/javamains'
-    apps = []
-
-    def prepare_manifest(self, build_dir, manifest_type, manifest):
-        if manifest_type != 'usr':
-            return
-
-        javamains_path = os.path.join(build_dir, 'javamains')
-        with open(javamains_path, "w") as mains:
-            for app in self.apps:
-                mains.write('\n'.join(app.get_multimain_lines()) + '\n')
-
-        manifest.write('%s: %s\n' % (self.multimain_manifest, javamains_path))
-
-    def get_launcher_args(self):
-        jvm_args = []
-        for app in self.apps:
-            jvm_args.extend(app.get_jvm_args())
-
-        return ['java.so'] + jvm_args + ['io.osv.isolated.MultiJarLoader', '-mains', self.multimain_manifest]
-
-    def add(self, app):
-        self.apps.append(app)
-
-    def has_any_app(self):
-        return self.apps
-
-class non_isolated_jvm(api.basic_app):
+class jvm_app(api.basic_app):
     app = None
 
     def get_launcher_args(self):
@@ -135,15 +107,12 @@ def flatten_list(elememnts):
 
 def get_basic_apps(apps):
     basic_apps = []
-    _jvm = isolated_jvm()
+    _jvm = jvm_app()
 
     for app in flatten_list(apps):
         if isinstance(app, api.basic_app):
             basic_apps.append(app)
         elif isinstance(app, api.java_app):
-            java = resolve.require('java-base')
-            if hasattr(java,'non_isolated_jvm') and java.non_isolated_jvm:
-                _jvm = non_isolated_jvm()
             _jvm.add(app)
         else:
             raise Exception("Unknown app type: " + str(app))
