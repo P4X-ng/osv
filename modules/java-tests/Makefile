@@ -16,27 +16,27 @@ tests-jre-extension-target := tests-jre-extension/target/tests-jre-extension.jar
 comma := ,
 
 $(tests-jre-extension-target): $(wildcard tests-jre-extension/src/main/java/tests/*.java) \
-                tests-jre-extension/pom.xml pom.xml
-        $(call quiet, cd $(src)/modules/java-tests && JAVA_HOME=$(java_jdk_path) mvn -q --projects :tests-jre-extension package -DskipTests=true, MVN $@)
+		tests-jre-extension/pom.xml pom.xml
+	$(call quiet, cd $(src)/modules/java-tests && JAVA_HOME=$(java_jdk_path) mvn -q --projects :tests-jre-extension package -DskipTests=true, MVN $@)
 
 $(tests-jar-target): $(tests-jre-extension-target) \
-                $(wildcard tests/src/main/java/io/osv/*.java) \
-                $(wildcard tests/src/main/java/tests/*.java) \
-                pom.xml tests/pom.xml
-        $(call quiet, cd $(src)/modules/java-tests && \
-        JAVA_HOME=$(java_jdk_path) mvn -q --projects :runjava-common$(comma):runjava-non-isolated$(comma):runjava-tests$(comma):tests-jre-extension package -DskipTests=true, MVN $@)
+		$(wildcard tests/src/main/java/io/osv/*.java) \
+		$(wildcard tests/src/main/java/tests/*.java) \
+		pom.xml tests/pom.xml
+	$(call quiet, cd $(src)/modules/java-tests && \
+	JAVA_HOME=$(java_jdk_path) mvn -q --projects :runjava-common$(comma):runjava-non-isolated$(comma):runjava-tests$(comma):tests-jre-extension package -DskipTests=true, MVN $@)
 
 init:
-        @echo "  MKDIRS"
-        $(call very-quiet, mkdir -p $(module_out))
+	@echo "  MKDIRS"
+	$(call very-quiet, mkdir -p $(module_out))
 
 module: $(tests-jar-target) test_commands
 else
 tests-jar-target := tests-for-java9_1x/target/runjava-9-1x-tests.jar
 
 $(tests-jar-target): $(wildcard $(java-base-path)/tests-for-java9_1x/src/main/java/io/osv//*.java)
-        $(call quiet, cd $(src)/modules/java-tests/tests-for-java9_1x && \
-        JAVA_HOME=$(java_jdk_path) mvn -q package -DskipTests=true, MVN $@)
+	$(call quiet, cd $(src)/modules/java-tests/tests-for-java9_1x && \
+	JAVA_HOME=$(java_jdk_path) mvn -q package -DskipTests=true, MVN $@)
 
 module: $(tests-jar-target) test_commands
 endif
@@ -49,18 +49,18 @@ java_perms_cmd := 'java-perms: /usr/lib/jvm/java/bin/java -cp /tests/java/tests.
 
 ifeq ($(arch),$(host_arch))
 test_commands:
-        $(call very-quiet, rm -f test_commands)
-        $(call very-quiet, if [ "$(javac_version)" = "javac 1.8" -a "$(conf_hide_symbols)" != "1" ]; then \
-                echo $(java_non_isolated_cmd) >> test_commands; fi )
-        $(call very-quiet, echo $(java_no_wrapper_cmd) >> test_commands)
-        $(call very-quiet, echo $(java_perms_cmd) >> test_commands)
+	$(call very-quiet, rm -f test_commands)
+	$(call very-quiet, if [ "$(javac_version)" = "javac 1.8" -a "$(conf_hide_symbols)" != "1" ]; then \
+		echo $(java_non_isolated_cmd) >> test_commands; fi )
+	$(call very-quiet, echo $(java_no_wrapper_cmd) >> test_commands)
+	$(call very-quiet, echo $(java_perms_cmd) >> test_commands)
 else
 test_commands:
-        $(call very-quiet, rm -f test_commands)
+	$(call very-quiet, rm -f test_commands)
 endif
 
 clean:
-        cd $(src)/modules/java-tests && mvn -q clean
-        cd $(src)/modules/java-tests/tests-for-java9_1x && mvn -q clean
-        -rm -f dependency-reduced-pom.xml test_commands
-        $(call very-quiet, $(RM) -rf $(module_out))
+	cd $(src)/modules/java-tests && mvn -q clean
+	cd $(src)/modules/java-tests/tests-for-java9_1x && mvn -q clean
+	-rm -f dependency-reduced-pom.xml test_commands
+	$(call very-quiet, $(RM) -rf $(module_out))
