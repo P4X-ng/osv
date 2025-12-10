@@ -283,8 +283,6 @@ bool fixup_fault(exception_frame* ef)
     return false;
 }
 
-extern "C" { void fp_exception(exception_frame* ef); }
-
 void fp_exception(exception_frame* ef)
 {
     sched::fpu_lock fpu;
