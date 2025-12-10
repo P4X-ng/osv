@@ -93,7 +93,7 @@ __tlsdesc_dynamic:
         ldp x29, x30, [sp], #48
         .cfi_restore x29
         .cfi_restore x30
-        .cfi_def_cfa sp, 32
+        .cfi_def_cfa sp, 0
 
         b 2b
         .cfi_endproc

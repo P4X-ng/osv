@@ -21,21 +21,26 @@
 __elf_resolve_pltgot:
 .type __elf_resolve_pltgot, @function
         .cfi_startproc
+        // When this function is called, the stack already has:
+        // [sp, #8] = lr (x30)
+        // [sp, #0] = &PLTGOT[n]
+        .cfi_offset x30, -8
         stp     x8, xzr, [sp, #-80]! // space for x0-x8
-        .cfi_def_cfa_offset 80
-        .cfi_offset x8, 0
+        .cfi_def_cfa_offset 96  // 80 + 16 (the pre-existing stack frame)
+        .cfi_offset x8, 16
+        .cfi_offset x30, 8  // Update offset after sp adjustment
         stp     x6, x7, [sp, #16]
-        .cfi_offset x6, 16
-        .cfi_offset x7, 24
+        .cfi_offset x6, 32
+        .cfi_offset x7, 40
         stp     x4, x5, [sp, #32]
-        .cfi_offset x4, 32
-        .cfi_offset x5, 40
+        .cfi_offset x4, 48
+        .cfi_offset x5, 56
         stp     x2, x3, [sp, #48]
-        .cfi_offset x2, 48
-        .cfi_offset x3, 56
+        .cfi_offset x2, 64
+        .cfi_offset x3, 72
         stp     x0, x1, [sp, #64]
-        .cfi_offset x0, 64
-        .cfi_offset x1, 72
+        .cfi_offset x0, 80
+        .cfi_offset x1, 88
 
         ldr     x0, [sp, #80]       // load &PLTGOT[n]
         ldr     x1, [x16, #-8]      // load object
@@ -63,7 +68,6 @@ __elf_resolve_pltgot:
         .cfi_def_cfa_offset 16
 
         ldp     x17, x30, [sp], #16
-        .cfi_restore x17
         .cfi_restore x30
         .cfi_def_cfa_offset 0
         br      x16
