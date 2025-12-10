@@ -14,6 +14,10 @@
 
 using namespace gdb;
 
+// Configuration constants
+constexpr uint16_t MIN_TCP_PORT = 1;
+constexpr uint16_t MAX_TCP_PORT = 65535;
+
 static sched::thread* gdb_thread = nullptr;
 
 // Parse command line arguments for GDB stub configuration
@@ -70,8 +74,9 @@ extern "C" int gdb_stub_main(int argc, char** argv) {
     if (transport_type == "tcp") {
         try {
             int port_int = std::stoi(param);
-            if (port_int < 1 || port_int > 65535) {
-                debug("GDB stub: Invalid port number %d (must be 1-65535)\n", port_int);
+            if (port_int < MIN_TCP_PORT || port_int > MAX_TCP_PORT) {
+                debug("GDB stub: Invalid port number %d (must be %d-%d)\n", 
+                      port_int, MIN_TCP_PORT, MAX_TCP_PORT);
                 return 1;
             }
             uint16_t port = static_cast<uint16_t>(port_int);

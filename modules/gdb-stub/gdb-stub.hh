@@ -16,6 +16,12 @@
 
 namespace gdb {
 
+// Configuration constants
+constexpr size_t MAX_PACKET_SIZE = 4096;        // Maximum packet size for GDB protocol
+constexpr size_t MAX_MEMORY_ACCESS_SIZE = 4096; // Maximum memory read/write size
+constexpr uint16_t MIN_TCP_PORT = 1;            // Minimum valid TCP port
+constexpr uint16_t MAX_TCP_PORT = 65535;        // Maximum valid TCP port
+
 // Forward declarations
 class Transport;
 struct CpuState;

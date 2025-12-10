@@ -22,6 +22,12 @@
 
 namespace gdb {
 
+// Configuration constants
+constexpr size_t MAX_PACKET_SIZE = 4096;
+constexpr size_t MAX_MEMORY_ACCESS_SIZE = 4096;
+constexpr uint16_t MIN_TCP_PORT = 1;
+constexpr uint16_t MAX_TCP_PORT = 65535;
+
 // Packet implementation
 uint8_t Packet::checksum() const {
     uint8_t sum = 0;
@@ -147,7 +153,7 @@ bool TcpTransport::send(const std::string& data) {
 std::string TcpTransport::receive() {
     if (_client_fd < 0) return "";
     
-    char buffer[4096];
+    char buffer[MAX_PACKET_SIZE];
     ssize_t received = recv(_client_fd, buffer, sizeof(buffer) - 1, 0);
     
     if (received <= 0) {
@@ -243,7 +249,7 @@ bool SerialTransport::send(const std::string& data) {
 std::string SerialTransport::receive() {
     if (_fd < 0) return "";
     
-    char buffer[4096];
+    char buffer[MAX_PACKET_SIZE];
     ssize_t bytes_read = read(_fd, buffer, sizeof(buffer) - 1);
     
     if (bytes_read <= 0) {
@@ -497,7 +503,7 @@ std::string GdbStub::handle_read_memory(uint64_t addr, size_t length) {
     // 2. Memory is readable (not protected)
     // 3. Length is reasonable (cap at some maximum)
     
-    if (length == 0 || length > 4096) {
+    if (length == 0 || length > MAX_MEMORY_ACCESS_SIZE) {
         return "E01"; // Invalid length
     }
     
@@ -535,7 +541,7 @@ std::string GdbStub::handle_write_memory(uint64_t addr, const std::string& data)
     }
     
     size_t length = data.length() / 2;
-    if (length > 4096) {
+    if (length > MAX_MEMORY_ACCESS_SIZE) {
         return "E03"; // Data too large
     }
     
