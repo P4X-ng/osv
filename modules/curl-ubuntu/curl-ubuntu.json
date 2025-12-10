@@ -1,0 +1,51 @@
+{
+    "packages": [
+        "curl",
+        "libcurl4"
+    ],
+    "blacklist": [
+        "bash",
+        "dash",
+        "systemd",
+        "systemd-sysv",
+        "init",
+        "upstart",
+        "udev",
+        "systemd-udev",
+        "dbus",
+        "dbus-x11",
+        "apt",
+        "dpkg",
+        "debconf",
+        "perl-base",
+        "python3-minimal",
+        "mount",
+        "util-linux",
+        "coreutils",
+        "findutils",
+        "grep",
+        "sed"
+    ],
+    "transformations": {
+        "remove_files": [
+            "*.a",
+            "*.la",
+            "*.pyc",
+            "*.pyo"
+        ],
+        "remove_directories": [
+            "usr/share/doc",
+            "usr/share/man",
+            "usr/share/info",
+            "usr/share/lintian",
+            "usr/share/locale",
+            "var/lib/dpkg",
+            "var/cache",
+            "etc/init.d",
+            "etc/systemd",
+            "lib/systemd"
+        ]
+    },
+    "manifest_prefix": "/usr",
+    "cmdline": "/usr/bin/curl --help"
+}

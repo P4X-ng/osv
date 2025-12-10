@@ -1,0 +1,59 @@
+{
+    "packages": [
+        "nginx-core",
+        "nginx-common"
+    ],
+    "blacklist": [
+        "bash",
+        "dash",
+        "systemd",
+        "systemd-sysv",
+        "init",
+        "upstart",
+        "udev",
+        "systemd-udev",
+        "dbus",
+        "dbus-x11",
+        "apt",
+        "dpkg",
+        "debconf",
+        "perl-base",
+        "python3-minimal",
+        "mount",
+        "util-linux",
+        "coreutils",
+        "findutils",
+        "grep",
+        "sed",
+        "adduser",
+        "passwd",
+        "login"
+    ],
+    "transformations": {
+        "remove_files": [
+            "*.a",
+            "*.la",
+            "*.pyc",
+            "*.pyo"
+        ],
+        "remove_directories": [
+            "usr/share/doc",
+            "usr/share/man",
+            "usr/share/info",
+            "usr/share/lintian",
+            "usr/share/locale",
+            "var/lib/dpkg",
+            "var/cache",
+            "etc/init.d",
+            "etc/systemd",
+            "lib/systemd",
+            "etc/logrotate.d"
+        ],
+        "create_symlinks": {
+            "var/log/nginx": "/tmp/nginx-logs",
+            "var/lib/nginx": "/tmp/nginx-lib"
+        }
+    },
+    "manifest_prefix": "/",
+    "cmdline": "/usr/sbin/nginx -g 'daemon off;'"
+}
