@@ -53,3 +53,17 @@ modules/dl_tests/usr.manifest
 compile_commands.json
 downloaded_packages
 .firecracker
+
+# Test artifacts
+*.log
+test-results/
+playwright-report/
+playwright-traces/
+screenshots/
+.pytest_cache/
+__pycache__/
+htmlcov/
+.coverage
+coverage.xml
+*.test
+*.test.exe

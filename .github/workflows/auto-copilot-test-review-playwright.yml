@@ -25,7 +25,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@main
 
+      - name: Detect Project Type
+        id: project_type
+        run: |
+          # Detect if this is a web project that needs Playwright
+          if [ -f "package.json" ] || [ -f "playwright.config.js" ] || [ -f "playwright.config.ts" ]; then
+            echo "is_web_project=true" >> $GITHUB_OUTPUT
+            echo "Project type: Web/JavaScript project - Playwright applicable"
+          elif [ -f "Makefile" ] && ! [ -f "package.json" ]; then
+            # Additional checks for C/C++/systems projects
+            if [ -f "CMakeLists.txt" ] || [ -f "configure" ] || [ -f "configure.ac" ] || \
+               find . -maxdepth 3 -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" 2>/dev/null | head -1 | grep -q .; then
+              echo "is_web_project=false" >> $GITHUB_OUTPUT
+              echo "Project type: C/C++/Systems project - Playwright not applicable"
+            else
+              echo "is_web_project=maybe" >> $GITHUB_OUTPUT
+              echo "Project type: Make-based but unclear - will attempt Playwright tests"
+            fi
+          else
+            echo "is_web_project=maybe" >> $GITHUB_OUTPUT
+            echo "Project type: Unknown - will attempt Playwright tests"
+          fi
+
       - name: Setup Node.js
+        if: steps.project_type.outputs.is_web_project != 'false'
         uses: actions/setup-node@main
         with:
           node-version: '20'
@@ -40,6 +63,7 @@ jobs:
         continue-on-error: true
 
       - name: Install Node.js dependencies
+        if: steps.project_type.outputs.is_web_project != 'false'
         run: |
           if [ -f "package.json" ]; then
             npm install
@@ -56,17 +80,19 @@ jobs:
         continue-on-error: true
 
       - name: Install Playwright browsers
+        if: steps.project_type.outputs.is_web_project != 'false'
         run: |
           npx playwright install --with-deps ${{ matrix.browser }} || python -m playwright install --with-deps ${{ matrix.browser }}
         continue-on-error: true
 
       - name: Verify Playwright installation
+        if: steps.project_type.outputs.is_web_project != 'false'
         run: |
           echo "Checking Playwright installation..."
           npx playwright --version || python -m playwright --version || echo "Playwright not installed"
 
       - name: Run Playwright Tests (Headless)
-        if: matrix.mode == 'headless'
+        if: matrix.mode == 'headless' && steps.project_type.outputs.is_web_project != 'false'
         run: |
           if [ -f "playwright.config.ts" ] || [ -f "playwright.config.js" ]; then
             npx playwright test --browser=${{ matrix.browser }}
@@ -80,7 +106,7 @@ jobs:
         continue-on-error: true
 
       - name: Run Playwright Tests (Headed)
-        if: matrix.mode == 'headed'
+        if: matrix.mode == 'headed' && steps.project_type.outputs.is_web_project != 'false'
         run: |
           if [ -f "playwright.config.ts" ] || [ -f "playwright.config.js" ]; then
             npx playwright test --browser=${{ matrix.browser }} --headed
@@ -165,22 +191,42 @@ jobs:
           echo "## Test Coverage Analysis" > /tmp/coverage-analysis.md
           echo "" >> /tmp/coverage-analysis.md
           
+          # Detect project type
+          echo "### Project Type Detection:" >> /tmp/coverage-analysis.md
+          if [ -f "Makefile" ] && ! [ -f "package.json" ]; then
+            # Additional checks for C/C++/systems projects
+            if [ -f "CMakeLists.txt" ] || [ -f "configure" ] || [ -f "configure.ac" ] || \
+               find . -maxdepth 3 -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" 2>/dev/null | head -1 | grep -q .; then
+              echo "📦 **Project Type**: C/C++/Systems Programming Project" >> /tmp/coverage-analysis.md
+              echo "ℹ️ Playwright testing is not applicable for this project type" >> /tmp/coverage-analysis.md
+              echo "" >> /tmp/coverage-analysis.md
+            fi
+          elif [ -f "package.json" ]; then
+            echo "📦 **Project Type**: JavaScript/TypeScript/Web Project" >> /tmp/coverage-analysis.md
+            echo "" >> /tmp/coverage-analysis.md
+          fi
+          
           # Check for test framework indicators
           echo "### Test Framework Detection:" >> /tmp/coverage-analysis.md
           
-          # Check for Playwright
-          if [ -f "playwright.config.js" ] || [ -f "playwright.config.ts" ] || grep -r "playwright" package.json 2>/dev/null; then
-            echo "✅ Playwright configuration detected" >> /tmp/coverage-analysis.md
+          # Check for Playwright only if web project
+          if [ -f "package.json" ]; then
+            if [ -f "playwright.config.js" ] || [ -f "playwright.config.ts" ] || grep -r "playwright" package.json 2>/dev/null; then
+              echo "✅ Playwright configuration detected" >> /tmp/coverage-analysis.md
+            else
+              echo "⚠️ No Playwright configuration found" >> /tmp/coverage-analysis.md
+            fi
+            
+            # Check for other test frameworks
+            if grep -r "jest\|mocha\|jasmine\|vitest" package.json 2>/dev/null; then
+              echo "✅ JavaScript test framework detected" >> /tmp/coverage-analysis.md
+            fi
           else
-            echo "⚠️ No Playwright configuration found" >> /tmp/coverage-analysis.md
+            echo "ℹ️ Playwright not applicable - this is not a web project" >> /tmp/coverage-analysis.md
           fi
           
-          # Check for other test frameworks
-          if grep -r "jest\|mocha\|jasmine\|vitest" package.json 2>/dev/null; then
-            echo "✅ JavaScript test framework detected" >> /tmp/coverage-analysis.md
-          fi
-          
-          if find . -name "*.test.js" -o -name "*.test.ts" -o -name "*.spec.js" -o -name "*.spec.ts" | grep -q .; then
+          # Check for existing test files
+          if find . -name "*.test.js" -o -name "*.test.ts" -o -name "*.spec.js" -o -name "*.spec.ts" -o -name "*.test.py" -o -name "*test*.cc" -o -name "*test*.cpp" 2>/dev/null | grep -q .; then
             echo "✅ Test files found" >> /tmp/coverage-analysis.md
           else
             echo "⚠️ No test files detected" >> /tmp/coverage-analysis.md
@@ -228,32 +274,64 @@ jobs:
             const date = new Date().toISOString().split('T')[0];
             const title = `Test Coverage Review - ${date}`;
             
+            // Detect if this is a web project
+            const isWebProject = coverageAnalysis.includes('JavaScript/TypeScript/Web Project');
+            const playwrightNotApplicable = coverageAnalysis.includes('Playwright not applicable');
+            
+            let playwrightSection = '';
+            let recommendations = '';
+            
+            if (playwrightNotApplicable) {
+              playwrightSection = `## Playwright Test Status
+              
+              ℹ️ **Playwright testing is not applicable for this project type**
+              
+              This project is a C/C++/Systems programming project and does not require Playwright browser testing.
+              The project has its own appropriate test infrastructure for the technology stack being used.
+              `;
+              
+              recommendations = `## Recommendations
+              
+              1. **Maintain existing test infrastructure** appropriate for C/C++/systems projects
+              2. **Add tests** for critical functionality without coverage
+              3. **Review test quality** and maintainability
+              4. **Fix flaky tests** and timing issues
+              5. **Ensure CI/CD integration** for all tests
+              6. **Document test execution** procedures
+              `;
+            } else {
+              playwrightSection = `## Playwright Test Status
+              
+              ${isWebProject ? '✅ Tests run in multiple browsers: Chromium, Firefox, WebKit\n✅ Tests run in both headed and headless modes' : '⚠️ Playwright tests not detected'}
+              `;
+              
+              recommendations = `## Recommendations
+              
+              1. **Add Playwright tests** for all web-based functionality
+              2. **Migrate existing web tests** to Playwright if not already using it
+              3. **Add tests** for source files without coverage
+              4. **Review test quality** and maintainability
+              5. **Fix flaky tests** and timing issues
+              6. **Ensure CI/CD integration** for all tests
+              `;
+            }
+            
             const body = `# Comprehensive Test Review
             
-            This automated review ensures proper test coverage with Playwright for web tests.
+            This automated review analyzes test coverage for the project.
             
             ${analysis}
             
             ${coverageAnalysis}
             
-            ## Playwright Test Status
+            ${playwrightSection}
             
-            ✅ Tests run in multiple browsers: Chromium, Firefox, WebKit
-            ✅ Tests run in both headed and headless modes
-            
-            ## Recommendations
-            
-            1. **Add Playwright tests** for all web-based functionality
-            2. **Migrate existing web tests** to Playwright if not already using it
-            3. **Add tests** for source files without coverage
-            4. **Review test quality** and maintainability
-            5. **Fix flaky tests** and timing issues
-            6. **Ensure CI/CD integration** for all tests
+            ${recommendations}
             
             ## Action Items
             
-            - [ ] Review files without tests and add coverage
-            - [ ] Migrate non-Playwright web tests to Playwright
+            - [ ] Review files without tests and add coverage where appropriate
+            ${playwrightNotApplicable ? '' : '- [ ] Migrate non-Playwright web tests to Playwright'}
             - [ ] Fix any failing tests
             - [ ] Add documentation for test setup and execution
             
