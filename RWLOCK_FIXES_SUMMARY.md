@@ -38,47 +38,26 @@ This document summarizes the fixes applied to the rwlock implementation to addre
 
 ### Specific Changes
 
-#### 1. `try_rlock()` method (lines 85-103)
-```cpp
-bool rwlock::try_rlock()
-{
-    //Check if current thread already holds the write lock - if so, allow immediate read access
-    //since write lock implies read capability
-    if (_readers.load(std::memory_order_acquire) & WRITER_LOCK && _wmtx.owned()) {
-        return true;
-    }
-    
-    // ... rest of original implementation
-}
-```
+#### 1. Modified `try_rlock()` method (lines 85-103)
+Added ownership check at the beginning of the method:
+- Check if current thread already holds the write lock
+- If so, allow immediate read access since write lock implies read capability
+- Uses `_readers.load(std::memory_order_acquire) & WRITER_LOCK && _wmtx.owned()`
+- Returns true immediately without incrementing reader count
 
-#### 2. `rlock()` method (lines 105-151)
-```cpp
-void rwlock::rlock()
-{
-    //Check if current thread already holds the write lock - if so, allow immediate read access
-    //since write lock implies read capability
-    if (_readers.load(std::memory_order_acquire) & WRITER_LOCK && _wmtx.owned()) {
-        return;
-    }
-    
-    // ... rest of original implementation
-}
-```
+#### 2. Modified `rlock()` method (lines 105-151)  
+Added ownership check at the beginning of the method:
+- Check if current thread already holds the write lock
+- If so, allow immediate read access since write lock implies read capability
+- Uses `_readers.load(std::memory_order_acquire) & WRITER_LOCK && _wmtx.owned()`
+- Returns immediately without incrementing reader count
 
-#### 3. `runlock()` method (lines 153-177)
-```cpp
-void rwlock::runlock()
-{
-    //Check if current thread holds the write lock - if so, this is a no-op
-    //since the read access was granted without incrementing the reader count
-    if (_readers.load(std::memory_order_acquire) & WRITER_LOCK && _wmtx.owned()) {
-        return;
-    }
-    
-    // ... rest of original implementation
-}
-```
+#### 3. Modified `runlock()` method (lines 153-177)
+Added ownership check at the beginning of the method:
+- Check if current thread holds the write lock
+- If so, this is a no-op since read access was granted without incrementing reader count
+- Uses `_readers.load(std::memory_order_acquire) & WRITER_LOCK && _wmtx.owned()`
+- Returns immediately without decrementing reader count
 
 ## Testing
 
