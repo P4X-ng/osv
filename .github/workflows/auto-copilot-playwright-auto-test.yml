@@ -27,67 +27,22 @@ jobs:
         run: |
           python -m playwright install
 
-      - name: Generate Basic Playwright Test Structure
-        run: |
-          echo "## Generating Basic Playwright Test Structure" > /tmp/test-generation.md
-          echo "" >> /tmp/test-generation.md
-          
-          # Create basic test directory structure if it doesn't exist
-          mkdir -p tests/playwright
-          
-          # Create a basic test template if no tests exist
-          if [ ! -f "tests/playwright/basic.spec.js" ]; then
-            cat > tests/playwright/basic.spec.js << 'EOF'
-          const { test, expect } = require('@playwright/test');
-
-          test('basic page load test', async ({ page }) => {
-            // This is a basic template - customize for your application
-            await page.goto('/');
-            await expect(page).toHaveTitle(/.*/, { timeout: 10000 });
-          });
-
-          test('basic navigation test', async ({ page }) => {
-            // Add your navigation tests here
-            await page.goto('/');
-            // Add assertions based on your application
-          });
-          EOF
-            echo "✅ Created basic Playwright test template" >> /tmp/test-generation.md
-          else
-            echo "✅ Playwright tests already exist" >> /tmp/test-generation.md
-          fi
-          
-          cat /tmp/test-generation.md
-        continue-on-error: true
+      - name: Copilot Generate Playwright Scripts
+        uses: github/copilot-agent/playwright-generate@main # Example, customize for Python; or use Chat to generate script
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: "Generate Playwright test scripts covering every user action on this web app."
+        continue-on-error: true # If your agent doesn't support, replace with python script generation using Copilot Chat
 
       - name: Run Playwright Tests
         run: |
           pytest tests/ # Or the path to your Playwright scripts
 
-      - name: Analyze Test Results and Suggest Improvements
-        run: |
-          echo "## Test Analysis and Improvement Suggestions" > /tmp/test-improvements.md
-          echo "" >> /tmp/test-improvements.md
-          
-          # Check test results and provide suggestions
-          if [ $? -eq 0 ]; then
-            echo "✅ All tests passed successfully" >> /tmp/test-improvements.md
-            echo "" >> /tmp/test-improvements.md
-            echo "### Suggestions for Test Enhancement:" >> /tmp/test-improvements.md
-            echo "1. Add more comprehensive test coverage" >> /tmp/test-improvements.md
-            echo "2. Include edge case testing" >> /tmp/test-improvements.md
-            echo "3. Add performance testing scenarios" >> /tmp/test-improvements.md
-          else
-            echo "❌ Some tests failed" >> /tmp/test-improvements.md
-            echo "" >> /tmp/test-improvements.md
-            echo "### Recommended Fixes:" >> /tmp/test-improvements.md
-            echo "1. Review test logs for specific failure reasons" >> /tmp/test-improvements.md
-            echo "2. Check application functionality being tested" >> /tmp/test-improvements.md
-            echo "3. Verify test environment setup" >> /tmp/test-improvements.md
-            echo "4. Update test expectations if application changed" >> /tmp/test-improvements.md
-          fi
-          
-          cat /tmp/test-improvements.md
+      - name: If Tests Fail, Copilot Attempts Fix & Repeats
+        uses: github/copilot-agent/playwright-fix-and-loop@main # Example, requires agent loop feature
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max_attempts: 5
         continue-on-error: true
 
       - name: Create PR with passing tests or attempted fixes
