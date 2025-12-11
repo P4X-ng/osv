@@ -59,6 +59,7 @@ HOST_CXX := g++
 
 detect_arch = $(word 1, $(shell { echo "x64        __x86_64__";  \
                                   echo "aarch64    __aarch64__"; \
+                                  echo "riscv64    __riscv"; \
                        } | $1 -E -xc - | grep ' 1$$'))
 
 host_arch := $(call detect_arch, $(HOST_CXX))
