@@ -66,57 +66,21 @@ jobs:
           
           cat /tmp/analysis.md
 
-      - name: Code Quality Analysis
-        run: |
-          echo "## Code Quality Analysis" > /tmp/quality-analysis.md
-          echo "" >> /tmp/quality-analysis.md
-          
-          # Check for code complexity indicators
-          echo "### Code Complexity Analysis:" >> /tmp/quality-analysis.md
-          
-          # Find large files that might need refactoring
-          echo "" >> /tmp/quality-analysis.md
-          echo "#### Large Files (>500 lines):" >> /tmp/quality-analysis.md
-          find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" -o -name "*.h" -o -name "*.hh" -o -name "*.py" -o -name "*.js" -o -name "*.ts" | \
-            while read -r file; do
-              if [ -f "$file" ]; then
-                lines=$(wc -l < "$file" 2>/dev/null || echo 0)
-                if [ "$lines" -gt 500 ]; then
-                  echo "⚠️ $file: $lines lines (consider splitting)" >> /tmp/quality-analysis.md
-                fi
-              fi
-            done
-          
-          # Check for potential code duplication patterns
-          echo "" >> /tmp/quality-analysis.md
-          echo "#### Potential Code Duplication:" >> /tmp/quality-analysis.md
-          
-          # Look for repeated function signatures or similar patterns
-          if find . -name "*.c" -o -name "*.cc" -o -name "*.cpp" | head -10 | xargs grep -h "^[a-zA-Z_][a-zA-Z0-9_]* [a-zA-Z_][a-zA-Z0-9_]*(" 2>/dev/null | sort | uniq -d | head -5 | grep -q .; then
-            echo "⚠️ Found potential duplicate function signatures" >> /tmp/quality-analysis.md
-          else
-            echo "✅ No obvious function signature duplication detected" >> /tmp/quality-analysis.md
-          fi
-          
-          # Check for consistent naming conventions
-          echo "" >> /tmp/quality-analysis.md
-          echo "#### Code Style Consistency:" >> /tmp/quality-analysis.md
-          
-          # Check for mixed naming conventions in headers
-          mixed_naming=0
-          if find . -name "*.h" -o -name "*.hh" | head -5 | xargs grep -h "^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*(" 2>/dev/null | grep -q "[A-Z]"; then
-            if find . -name "*.h" -o -name "*.hh" | head -5 | xargs grep -h "^[[:space:]]*[a-z_][a-z0-9_]*[[:space:]]*(" 2>/dev/null | grep -q "_"; then
-              mixed_naming=1
-            fi
-          fi
-          
-          if [ $mixed_naming -eq 1 ]; then
-            echo "⚠️ Mixed naming conventions detected (camelCase and snake_case)" >> /tmp/quality-analysis.md
-          else
-            echo "✅ Consistent naming convention appears to be used" >> /tmp/quality-analysis.md
-          fi
-          
-          cat /tmp/quality-analysis.md
+      - name: GitHub Copilot Code Review
+        uses: github/copilot-cli-action@main
+        with:
+          query: |
+            Review the codebase for code cleanliness issues:
+            1. Identify files that are too large (>500 lines) and suggest how to split them into smaller, focused modules
+            2. Look for code duplication and suggest refactoring opportunities
+            3. Check for consistent code style and formatting
+            4. Identify complex functions that could be simplified
+            5. Suggest improvements for code organization and structure
+            6. Check for proper separation of concerns
+            
+            Provide actionable recommendations with specific file names and line numbers.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Create Issue for Code Cleanliness Review
@@ -127,13 +91,6 @@ jobs:
             const fs = require('fs');
             const analysis = fs.readFileSync('/tmp/analysis.md', 'utf8');
             
-            let qualityAnalysis = '';
-            try {
-              qualityAnalysis = fs.readFileSync('/tmp/quality-analysis.md', 'utf8');
-            } catch (e) {
-              qualityAnalysis = 'Quality analysis not available.';
-            }
-            
             const date = new Date().toISOString().split('T')[0];
             const title = `Code Cleanliness Review - ${date}`;
             
@@ -142,8 +99,6 @@ jobs:
             This is an automated review conducted every 12 hours to maintain code quality.
             
             ${analysis}
-            
-            ${qualityAnalysis}
             
             ## Recommendations
             
