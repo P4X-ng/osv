@@ -11,6 +11,6 @@ jobs:
       - name: Run CodeQL Scan
         uses: github/codeql-action/init@main
         with:
-          languages: 'cpp,python,java'
+          languages: 'python,javascript'
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@main
