@@ -1,0 +1,5 @@
+# Ignore extracted package contents
+extracted/
+
+# Ignore downloaded .deb files
+downloads/
