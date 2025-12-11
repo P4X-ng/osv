@@ -37,37 +37,19 @@ jobs:
           pytest tests/ || exit 1
         continue-on-error: true
 
-      # Automated test analysis and reporting
-      - name: Analyze Test Results
-        run: |
-          echo "## Test Analysis Report" > /tmp/test-report.md
-          echo "" >> /tmp/test-report.md
-          
-          # Check if tests passed or failed
-          if [ $? -eq 0 ]; then
-            echo "✅ All Playwright tests passed successfully" >> /tmp/test-report.md
-          else
-            echo "❌ Some Playwright tests failed" >> /tmp/test-report.md
-            echo "" >> /tmp/test-report.md
-            echo "### Failed Tests:" >> /tmp/test-report.md
-            echo "Please check the test logs above for specific failure details." >> /tmp/test-report.md
-          fi
-          
-          cat /tmp/test-report.md
+      # Copilot PR Agent auto-review (if available for org)
+      - name: Copilot PR Agent Review
+        uses: github/copilot-agent/pr@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      # Create issue for test failures if needed
-      - name: Report Test Issues
-        run: |
-          echo "## Test Issue Reporting" > /tmp/issue-report.md
-          echo "" >> /tmp/issue-report.md
-          echo "### Recommendations for Test Improvements:" >> /tmp/issue-report.md
-          echo "1. Review failed test cases and fix underlying issues" >> /tmp/issue-report.md
-          echo "2. Ensure test environment is properly configured" >> /tmp/issue-report.md
-          echo "3. Check for flaky tests that may need stabilization" >> /tmp/issue-report.md
-          echo "4. Verify all dependencies are correctly installed" >> /tmp/issue-report.md
-          
-          cat /tmp/issue-report.md
+      # Copilot Agent auto-fix (can loop up to N attempts if tests fail)
+      - name: Copilot Auto-fix Failing Playwright Tests
+        uses: github/copilot-agent/fix@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max_attempts: 3               # Try up to 3 auto-fix loops!
         continue-on-error: true
 
       # Create PR with fixes (if any)
