@@ -1,0 +1,5 @@
+name: osv.dotnet-example
+title: .NET Application Example Template
+author: OSv Project
+version: 1.0.0
+description: Template module demonstrating how to package .NET applications for OSv
