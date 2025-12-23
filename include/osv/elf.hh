@@ -321,6 +321,9 @@ struct Elf64_Sym {
 #ifdef __aarch64__
     constexpr const char *linux_dl_soname = "ld-linux-aarch64.so.1";
 #endif
+#ifdef __riscv
+    constexpr const char *linux_dl_soname = "ld-linux-riscv64-lp64d.so.1";
+#endif
 
 class program;
 struct symbol_module;
