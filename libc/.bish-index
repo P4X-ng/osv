@@ -1,0 +1,15 @@
+./locale/README.md
+./network/README.md
+./process/README.md
+./arch/README.md
+./env/README.md
+./README.md
+./errno/README.md
+./signal/README.md
+./math/README.md
+./unistd/README.md
+./stdlib/README.md
+./prng/README.md
+./misc/README.md
+./stdio/README.md
+./string/README.md

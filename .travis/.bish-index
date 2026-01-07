@@ -1,0 +1,10 @@
+./cirp/install.sh
+./cirp/cleanup5.sh
+./cirp/store.sh
+./cirp/publish.sh
+./cirp/cleanup2.sh
+./cirp/cleanup3.sh
+./cirp/cleanup4.sh
+./cirp/check_precondition.sh
+./cirp/collect.sh
+./cirp/cleanup1.sh
