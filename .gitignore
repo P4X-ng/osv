@@ -53,3 +53,5 @@ modules/dl_tests/usr.manifest
 compile_commands.json
 downloaded_packages
 .firecracker
+*.backup
+*.original
