@@ -1,0 +1,3 @@
+[manifest]
+/usr/bin/curl: ${MODULE_DIR}/extracted/usr/bin/curl
+/usr/share/zsh/vendor-completions/_curl: ${MODULE_DIR}/extracted/usr/share/zsh/vendor-completions/_curl
