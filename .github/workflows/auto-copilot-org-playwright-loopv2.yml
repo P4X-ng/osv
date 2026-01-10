@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   playwright-review-fix:
-    runs-on: [self-hosted, linux, x64, big]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
