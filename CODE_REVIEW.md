@@ -4,6 +4,15 @@
 
 This comprehensive code review analyzes the OSv unikernel codebase, identifying strengths, weaknesses, and areas for improvement. OSv demonstrates sophisticated kernel design with strong modularity, but has several areas that require attention for production deployments.
 
+## Related Documentation
+
+This review is complemented by detailed guides on specific topics:
+- **[SECURITY.md](SECURITY.md)** - Detailed security guidelines and known issues
+- **[PERFORMANCE.md](PERFORMANCE.md)** - Performance optimization strategies and profiling
+- **[ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md)** - Design patterns and architectural principles
+- **[AWS_BEST_PRACTICES.md](AWS_BEST_PRACTICES.md)** - AWS-specific deployment guidance
+- **[BEST_PRACTICES.md](BEST_PRACTICES.md)** - General development best practices
+
 ## Architecture Analysis
 
 ### Strengths
