@@ -10,6 +10,8 @@ from collections import defaultdict
 
 build_dir = os.path.dirname(gdb.current_objfile().filename)
 arch = build_dir[build_dir.rfind(".")+1:]
+if arch not in ['x64', 'aarch64', 'riscv64']:
+    arch = 'x64'  # default to x64 if unknown
 osv_dir = os.path.abspath(os.path.join(build_dir, '../..'))
 apps_dir = os.path.join(osv_dir, 'apps')
 external = os.path.join(osv_dir, 'external', arch)
