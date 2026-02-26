@@ -24,6 +24,7 @@ In particular, OSv can run many managed language runtimes including
 [**Python**](https://github.com/cloudius-systems/osv-apps/tree/master/python-from-host),
 [**Node.JS**](https://github.com/cloudius-systems/osv-apps/tree/master/node-from-host),
 [**Ruby**](https://github.com/cloudius-systems/osv-apps/tree/master/ruby-example), **Erlang**,
+[**.NET**](modules/dotnet-from-host/README.md),
 and applications built on top of those runtimes.
 It can also run applications written in languages compiling directly to native machine code like
 **C**, **C++**,
