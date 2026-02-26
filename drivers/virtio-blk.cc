@@ -292,6 +292,7 @@ int blk::make_request(struct bio* bio)
         if (get_guest_feature_bit(VIRTIO_BLK_F_SEG_MAX)) {
             if (bio->bio_bcount/mmu::page_size + 1 > _config.seg_max) {
                 trace_virtio_blk_make_request_seg_max(bio->bio_bcount, _config.seg_max);
+                biodone(bio, false);
                 return EIO;
             }
         }
@@ -315,6 +316,7 @@ int blk::make_request(struct bio* bio)
             type = VIRTIO_BLK_T_FLUSH;
             break;
         default:
+            biodone(bio, false);
             return ENOTBLK;
         }
 
