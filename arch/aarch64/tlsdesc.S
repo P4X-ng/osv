@@ -6,15 +6,20 @@
 .hidden __tlsdesc_static
 .type __tlsdesc_static,@function
 __tlsdesc_static:
+	.cfi_startproc
 	ldr x0,[x0,#8]
 	ret
+	.cfi_endproc
 
 .global __tlsdesc_dynamic
 .type __tlsdesc_dynamic,@function
 __tlsdesc_dynamic:
+	.cfi_startproc
 //FAST PATH
         stp x1,x2,[sp, #-16]! // save the 4 registers we will be using in fast path
+        .cfi_adjust_cfa_offset 16
         stp x3,x4,[sp, #-16]!
+        .cfi_adjust_cfa_offset 16
 
         ldr x0,[x0,#8]        // p - pointer to the module_and_offset struct passed as an argument to this function
         ldr x2,[x0]           // store p->module in x2
@@ -34,16 +39,21 @@ __tlsdesc_dynamic:
         sub x0,x0,x1          // subtract tpidr_el0 (stored in x1) per TLS descriptor contract and return it
 
         ldp x3,x4,[sp],#16
+        .cfi_adjust_cfa_offset -16
         ldp x1,x2,[sp],#16
+        .cfi_adjust_cfa_offset -16
         ret
 
 //SLOW PATH
 1:      stp	x29, x30, [sp, #-48]!
+        .cfi_adjust_cfa_offset 48
+        .cfi_rel_offset x29, 0
+        .cfi_rel_offset x30, 8
         mov     x29, sp
+        .cfi_def_cfa_register x29
 
         //Save all regular registers on the stack
         stp x0, xzr, [sp, #-16]!
-
         stp x1, x2, [sp, #-16]!
         stp x3, x4, [sp, #-16]!
         stp x5, x6, [sp, #-16]!
@@ -81,5 +91,9 @@ __tlsdesc_dynamic:
         ldp x0, xzr, [sp], #16
 
         ldp x29, x30, [sp], #48
+        .cfi_restore x29
+        .cfi_restore x30
+        .cfi_def_cfa sp, 0
 
         b 2b
+        .cfi_endproc

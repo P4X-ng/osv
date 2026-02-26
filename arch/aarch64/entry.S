@@ -94,6 +94,7 @@ exception_vectors:
         mrs     x3, spsr_el1
         mrs     x4, far_el1
         stp     x30, x1, [sp, #240]  // store lr, old SP
+        .cfi_rel_offset x30, 240
         stp     x2, x3, [sp, #256]   // store elr_el1, spsr_el1
         str     x4, [sp, #280]       // store far_el1
 .endm /* push_state_to_exception_frame */
@@ -122,6 +123,7 @@ exception_vectors:
         // happen automatically based on the value of spsr_el1 which we restored above
         // (the spsr_el1 holds PSTATE and EL and SP selector)
         ldr     x30, [sp], #48
+        .cfi_restore x30
         .cfi_adjust_cfa_offset -48
 .endm /* pop_state_to_exception_frame */
 
@@ -159,9 +161,6 @@ entry_\level\()_\type:
         .cfi_startproc simple
         .cfi_signal_frame
         .cfi_def_cfa sp, 0
-        .cfi_offset x30, -32 // Point to the elr register located at the -32 offset
-                             // of the exception frame to help gdb link to the
-                             // address when interrupt was raised
         push_state_to_exception_frame 1
         mrs     x19, tpidr_el0 // Save potential app thread pointer
         mrs     x20, tpidr_el1 // Read copy of kernel thread pointer
@@ -212,9 +211,6 @@ entry_curr_el_sp\stack\()_sync:
         .cfi_startproc simple
         .cfi_signal_frame
         .cfi_def_cfa sp, 0
-        .cfi_offset x30, -32 // Point to the elr register located at the -32 offset
-                             // of the exception frame to help gdb link to the
-                             // address when interrupt was raised
         push_state_to_exception_frame \switch
         mrs     x19, tpidr_el0 // Save potential app thread pointer
         mrs     x20, tpidr_el1 // Read copy of kernel thread pointer
@@ -239,9 +235,7 @@ handle_mem_abort_sp\stack:
         msr     tpidr_el0, x19 // Restore thread pointer
         pop_state_from_exception_frame
         eret
-        .cfi_endproc
 handle_system_call_sp\stack:
-        .cfi_startproc
         //see https://man7.org/linux/man-pages/man2/syscall.2.html for details
         //about calling convention for arm64
 
@@ -263,9 +257,7 @@ handle_system_call_sp\stack:
         msr     tpidr_el0, x19 //Restore thread pointer
         pop_state_from_exception_frame
         eret
-        .cfi_endproc
 unexpected_sync_exception_sp\stack:
-        .cfi_startproc
         mov     x0, sp  // save exception_frame to x0
         mov     x1, #CURR_EL_SPX
         mov     x2, #EX_TYPE_SYNC
@@ -287,9 +279,6 @@ entry_curr_el_sp\stack\()_irq:
         .cfi_startproc simple
         .cfi_signal_frame
         .cfi_def_cfa sp, 0
-        .cfi_offset x30, -32 // Point to the elr register located at the -32 offset
-                             // of the exception frame to help gdb link to the
-                             // address when interrupt was raised
         push_state_to_exception_frame \switch
         mrs     x19, tpidr_el0 // Save potential app thread pointer
         mrs     x20, tpidr_el1 // Read copy of kernel thread pointer
@@ -312,9 +301,6 @@ call_signal_handler_thunk:
         .cfi_startproc simple
         .cfi_signal_frame
         .cfi_def_cfa %sp, 0
-        .cfi_offset x30, -32 // Point to the elr register located at the -32 offset
-                             // of the exception frame to help gdb link to the
-                             // address when interrupt was raised
 
         # The call_signal_handler_thunk gets called on exit from the synchronous exception
         # (most likely page fault handler) as a result of build_signal_frame placing the address
@@ -356,6 +342,7 @@ call_signal_handler_thunk:
 .hidden fpu_state_save
 .type fpu_state_save, @function
 fpu_state_save:
+        .cfi_startproc
         stp     q0, q1, [x0]
         stp     q2, q3, [x0, #32]
         stp     q4, q5, [x0, #64]
@@ -377,12 +364,14 @@ fpu_state_save:
         mrs     x1, fpcr
         str     w1, [x0, #516]
         ret
+        .cfi_endproc
 
 // void fpu_state_load(fpu_state *s);
 .global fpu_state_load
 .hidden fpu_state_load
 .type fpu_state_load, @function
 fpu_state_load:
+        .cfi_startproc
         ldp     q0, q1, [x0]
         ldp     q2, q3, [x0, #32]
         ldp     q4, q5, [x0, #64]
@@ -404,3 +393,4 @@ fpu_state_load:
         ldr     w1, [x0, #516]
         msr     fpcr, x1
         ret
+        .cfi_endproc
