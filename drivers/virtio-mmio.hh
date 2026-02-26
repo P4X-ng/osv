@@ -146,7 +146,7 @@ private:
     u16 _device_id;
 
     mmioaddr_t _addr_mmio;
-#ifdef __aarch64__
+#if defined(__aarch64__) || defined(__riscv)
     std::unique_ptr<spi_interrupt> _irq;
 #else
     std::unique_ptr<gsi_edge_interrupt> _irq;
