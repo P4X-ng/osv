@@ -12,6 +12,8 @@
 #include <osv/kernel_config_logger_debug.h>
 #include <osv/kernel_config_lazy_stack.h>
 #include <osv/kernel_config_lazy_stack_invariant.h>
+#include <signal.h>
+#include <libc/signal.hh>
 
 #include "exceptions.hh"
 #include "fault-fixup.hh"
@@ -279,4 +281,19 @@ bool fixup_fault(exception_frame* ef)
         return true;
     }
     return false;
+}
+
+void fp_exception(exception_frame* ef)
+{
+    sched::fpu_lock fpu;
+    SCOPE_LOCK(fpu);
+    
+    siginfo_t si;
+    si.si_signo = SIGFPE;
+    // The ISS (Instruction Specific Syndrome) field in ESR contains the
+    // exception cause. Bits 0-7 contain TFV and IDF/IXF/UFF/OFF/DZF/IOF flags.
+    // We could decode these to set si_code appropriately, but for now
+    // we just use a generic code like x64 does.
+    si.si_code = 0;
+    osv::generate_signal(si, ef);
 }
