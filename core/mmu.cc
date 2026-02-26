@@ -21,6 +21,7 @@
 #include <osv/error.h>
 #include <osv/trace.hh>
 #include <stack>
+#include <vector>
 #include <fs/fs.hh>
 #include <osv/file.h>
 #include "dump.hh"
@@ -124,6 +125,19 @@ rwlock_t vma_list_mutex;
 // A mutex serializing modifications to the high part of the page table
 // (linear map, etc.) which are not part of vma_list.
 mutex page_table_high_mutex;
+
+#if CONF_memory_jvm_balloon
+// Thread-local list of JVM balloon VMAs that need to be deleted after
+// releasing the vma_list read lock to avoid deadlock
+static thread_local std::vector<jvm_balloon_vma*> deferred_vma_deletions;
+
+// Schedule a JVM balloon VMA for deferred deletion
+// This must be called while holding the vma_list read lock
+void schedule_deferred_vma_deletion(jvm_balloon_vma* vma)
+{
+    deferred_vma_deletions.push_back(vma);
+}
+#endif
 
 // 1's for the bits provided by the pte for this level
 // 0's for the bits provided by the virtual address for this level
@@ -1450,6 +1464,10 @@ void vm_fault(uintptr_t addr, exception_frame* ef)
     }
 #endif
     addr = align_down(addr, mmu::page_size);
+#if CONF_memory_jvm_balloon
+    // Ensure the deferred deletion list is empty before processing the fault
+    deferred_vma_deletions.clear();
+#endif
     WITH_LOCK(vma_list_mutex.for_read()) {
         auto vma = find_intersecting_vma(addr);
         if (vma == vma_list.end() || access_fault(*vma, ef->get_error())) {
@@ -1459,6 +1477,14 @@ void vm_fault(uintptr_t addr, exception_frame* ef)
         }
         vma->fault(addr, ef);
     }
+#if CONF_memory_jvm_balloon
+    // Delete any JVM balloon VMAs that were detached during fault handling
+    // This must be done after releasing the read lock to avoid deadlock
+    for (auto* v : deferred_vma_deletions) {
+        delete v;
+    }
+    deferred_vma_deletions.clear();
+#endif
     trace_mmu_vm_fault_ret(addr, ef->get_error());
 }
 
@@ -1698,14 +1724,29 @@ void jvm_balloon_vma::fault(uintptr_t fault_addr, exception_frame *ef)
     vma::fault(fault_addr, ef);
 }
 
+void jvm_balloon_vma::detach_balloon()
+{
+    // Remove from vma_list and vma_range_set while holding the read lock.
+    // This must be called before the VMA is deleted.
+    assert(!_detached && "VMA already detached");
+    vma_list.erase(*this);
+    WITH_LOCK(vma_range_set_mutex.for_write()) {
+        vma_range_set.erase(vma_range(this));
+    }
+    _detached = true;
+}
+
 jvm_balloon_vma::~jvm_balloon_vma()
 {
     // it believes the objects are no longer valid. It could be the case
     // for a dangling mapping representing a balloon that was already moved
     // out.
-    vma_list.erase(*this);
-    WITH_LOCK(vma_range_set_mutex.for_write()) {
-        vma_range_set.erase(vma_range(this));
+    // If already detached, skip the erase operations
+    if (!_detached) {
+        vma_list.erase(*this);
+        WITH_LOCK(vma_range_set_mutex.for_write()) {
+            vma_range_set.erase(vma_range(this));
+        }
     }
     assert(!(_real_flags & mmap_jvm_balloon));
     mmu::map_anon(addr(), size(), _real_flags, _real_perm);
@@ -1797,6 +1838,8 @@ ulong map_jvm(unsigned char* jvm_addr, size_t size, size_t align, balloon_ptr b)
                     WITH_LOCK(vma_range_set_mutex.for_write()) {
                         vma_range_set.erase(vma_range(&v));
                     }
+                    // Mark as detached since we already erased it from vma_list
+                    static_cast<jvm_balloon_vma*>(&v)->mark_detached();
                     // Finish the move. In practice, it will temporarily remap an
                     // anon mapping here, but this should be rare. Let's not
                     // complicate the code to optimize it. There are no
