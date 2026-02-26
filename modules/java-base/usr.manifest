@@ -7,3 +7,6 @@
 
 [manifest]
 /usr/lib/jni/monitor.so: ./modules/java-base/jni/monitor.so
+/java.so: ./modules/java-base/java.so
+/java/runjava-non-isolated.jar: ${OSV_BASE}/modules/java-base/runjava-non-isolated/target/runjava-non-isolated.jar
+/.java.policy: ${MODULE_DIR}/.java.policy

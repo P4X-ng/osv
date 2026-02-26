@@ -11,7 +11,6 @@
 
     <modules>
         <module>runjava-common</module>
-        <module>runjava-isolated</module>
         <module>runjava-non-isolated</module>
     </modules>
 
