@@ -44,6 +44,29 @@ Hyperkit as well as open clouds like AWS EC2, GCE and OpenStack.
 For more information about OSv, see the [main wiki page](https://github.com/cloudius-systems/osv/wiki)
 and http://osv.io/.
 
+## Documentation
+
+OSv provides comprehensive documentation to help developers and operators:
+
+### For Developers
+- **[ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md)** - Design patterns, architectural layers, and separation of concerns
+- **[SECURITY.md](SECURITY.md)** - Security best practices, known considerations, and code security guidelines
+- **[PERFORMANCE.md](PERFORMANCE.md)** - Performance optimization strategies, profiling tools, and best practices
+- **[CODE_REVIEW.md](CODE_REVIEW.md)** - Comprehensive code review and analysis
+- **[BEST_PRACTICES.md](BEST_PRACTICES.md)** - General development best practices
+- **[CODINGSTYLE.md](CODINGSTYLE.md)** - Code formatting and style guidelines
+
+### For Operations
+- **[AWS_BEST_PRACTICES.md](AWS_BEST_PRACTICES.md)** - Deploying and operating OSv on AWS
+- **[OSV_GUIDE.md](OSV_GUIDE.md)** - General OSv usage guide
+- **[KERNEL_CUSTOMIZATION.md](KERNEL_CUSTOMIZATION.md)** - Customizing the OSv kernel
+- **[SIZE_OPTIMIZATION.md](SIZE_OPTIMIZATION.md)** - Reducing image size
+
+### For Contributors
+- **[CONTRIBUTING](CONTRIBUTING)** - How to contribute to OSv
+- **[COMMON_ISSUES.md](COMMON_ISSUES.md)** - Common issues and solutions
+- **[COMPREHENSIVE_SUMMARY.md](COMPREHENSIVE_SUMMARY.md)** - Project overview and summary
+
 ## Building and Running Apps on OSv
 
 To run an application on OSv, one needs to build an image by fusing the OSv kernel, and
