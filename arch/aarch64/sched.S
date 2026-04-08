@@ -4,8 +4,13 @@
 .hidden reschedule_from_interrupt
 .type reschedule_from_interrupt, @function
 reschedule_from_interrupt:
+        .cfi_startproc
         stp     x29, x30, [sp, #-192]!
+        .cfi_def_cfa_offset 192
+        .cfi_offset x29, 0
+        .cfi_offset x30, 8
         mov	x29, sp
+        .cfi_def_cfa_register x29
 
         #Call cpu_schedule_next_thread() to determine next thread to switch to if any
         bl cpu_schedule_next_thread
@@ -18,16 +23,34 @@ reschedule_from_interrupt:
 
         #Store all regular callee-save registers on the old thread stack
         stp	x19, x20, [sp, #16]
+        .cfi_offset x19, 16
+        .cfi_offset x20, 24
         stp	x21, x22, [sp, #32]
+        .cfi_offset x21, 32
+        .cfi_offset x22, 40
         stp	x23, x24, [sp, #48]
+        .cfi_offset x23, 48
+        .cfi_offset x24, 56
         stp	x25, x26, [sp, #64]
+        .cfi_offset x25, 64
+        .cfi_offset x26, 72
         stp	x27, x28, [sp, #80]
+        .cfi_offset x27, 80
+        .cfi_offset x28, 88
 
         #Store all SIMD/FP callee-save registers on the old thread stack
         stp	d8, d9, [sp, #96]
+        .cfi_offset d8, 96
+        .cfi_offset d9, 104
         stp	d10, d11, [sp, #112]
+        .cfi_offset d10, 112
+        .cfi_offset d11, 120
         stp	d12, d13, [sp, #128]
+        .cfi_offset d12, 128
+        .cfi_offset d13, 136
         stp	d14, d15, [sp, #144]
+        .cfi_offset d14, 144
+        .cfi_offset d15, 152
 
         #Store FP Control Register with flags that control rounding, etc
         mrs     x2, fpcr
@@ -90,4 +113,8 @@ reschedule_from_interrupt:
 
 2:
         ldp     x29, x30, [sp], #192
+        .cfi_restore x29
+        .cfi_restore x30
+        .cfi_def_cfa sp, 0
         ret
+        .cfi_endproc
