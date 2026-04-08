@@ -16,7 +16,7 @@ void spin_lock(spinlock_t *sl)
 #ifdef __x86_64__
             __asm __volatile("pause");
 #endif
-#ifdef __aarch64__
+#if defined(__aarch64__) || defined(__riscv)
             __asm __volatile("isb sy");
 #endif
         }
@@ -46,7 +46,7 @@ void np_spin_lock(np_spinlock_t *sl)
 #ifdef __x86_64__
             __asm __volatile("pause");
 #endif
-#ifdef __aarch64__
+#if defined(__aarch64__) || defined(__riscv)
             __asm __volatile("isb sy");
 #endif
         }
